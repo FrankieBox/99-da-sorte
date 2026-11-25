@@ -8,6 +8,13 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const CATALOGO_PATH = path.join(DATA_DIR, 'catalogo.json');
 const VENDAS_PATH = path.join(DATA_DIR, 'vendas.json');
+const PEDIDOS_PATH = path.join(DATA_DIR, 'pedidos_online.json');
+
+const INFINITEPAY_HANDLE = (process.env.INFINITEPAY_HANDLE || '').replace(/^\$/, '').trim();
+const INFINITEPAY_API_KEY = (process.env.INFINITEPAY_API_KEY || '').trim();
+const INFINITEPAY_LINKS_URL = 'https://api.checkout.infinitepay.io/links';
+const INFINITEPAY_CHECK_URL = 'https://api.checkout.infinitepay.io/payment_check';
+const VALOR_MINIMO_CHECKOUT = 1.0;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -54,8 +61,18 @@ function gerarCatalogoPadrao() {
     app: '99 da sorte',
     regras: {
       estoqueIlimitado: true,
-      valorMinimo: 0.01,
+      valorMinimoTerminal: 0.01,
+      valorMinimoCheckout: VALOR_MINIMO_CHECKOUT,
       cotacoes: COTACOES
+    },
+    landingBase: {
+      slug: 'modelo-produto',
+      titulo: 'Produto / Concurso em Breve',
+      subtitulo: 'Base modelo pronta para receber produto, copy e regras oficiais.',
+      copy: 'Espaço reservado para a copy de venda do produto. O sorteio é único e compartilhado entre todos os produtos, variando apenas a modalidade utilizada.',
+      regraConcorrer: 'Escolha o número de acordo com a modalidade definida para este produto e preencha seus dados de contato para falarmos com você caso seja sorteado.',
+      modalidade: 'M',
+      precoBilhete: 1.0
     },
     produtos
   };
@@ -70,6 +87,9 @@ function inicializarBancoJSON() {
   }
   if (!fs.existsSync(VENDAS_PATH)) {
     fs.writeFileSync(VENDAS_PATH, JSON.stringify([], null, 2), 'utf8');
+  }
+  if (!fs.existsSync(PEDIDOS_PATH)) {
+    fs.writeFileSync(PEDIDOS_PATH, JSON.stringify([], null, 2), 'utf8');
   }
 }
 
@@ -116,6 +136,136 @@ function validarItem(item, tipo) {
   return { erro: 'Tipo de item desconhecido.' };
 }
 
+function prepararRegistroVenda({ modalidade, selecao, valor, origem, produto, lead, orderNsu }) {
+  const cfg = COTACOES[modalidade];
+  if (!cfg) return { erro: 'Modalidade inválida.' };
+
+  const valorNumerico = Number(valor);
+  if (isNaN(valorNumerico) || valorNumerico < 0.01) {
+    return { erro: 'O valor da venda deve ser maior ou igual a 0,01.' };
+  }
+
+  const listaBruta = Array.isArray(selecao) ? selecao : [selecao];
+  if (listaBruta.length !== cfg.qtd) {
+    return {
+      erro: `${cfg.nome} (${cfg.codigo}) exige exatamente ${cfg.qtd} ${cfg.tipo}(s).`
+    };
+  }
+
+  const validados = [];
+  for (const raw of listaBruta) {
+    const resItem = validarItem(raw, cfg.tipo);
+    if (resItem.erro) return { erro: resItem.erro };
+    validados.push(resItem);
+  }
+
+  const selecaoFinal = cfg.qtd === 1 ? validados[0].valor : validados.map(v => v.valor);
+  const ordenados = [...validados].sort((a, b) => a.ordem - b.ordem).map(v => v.valor);
+  const chaveNormalizada = `${cfg.codigo}-${ordenados.join('-')}`;
+
+  const valorFormatado = Number(valorNumerico.toFixed(2));
+  const retornoPotencial = Number((valorFormatado * cfg.multiplicador).toFixed(2));
+  const origemLimpa = origem === 'landing' ? 'landing' : 'presencial';
+
+  return {
+    venda: {
+      id: `VND-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      dataHora: new Date().toISOString(),
+      origem: origemLimpa,
+      produto: produto || null,
+      lead: lead || null,
+      orderNsu: orderNsu || null,
+      modalidade: cfg.codigo,
+      nomeModalidade: cfg.nome,
+      multiplicador: cfg.multiplicador,
+      selecao: selecaoFinal,
+      chaveNormalizada,
+      valor: valorFormatado,
+      retornoPotencial
+    }
+  };
+}
+
+function getBaseUrl(req) {
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.headers['x-forwarded-host'] || req.get('host');
+  return `${proto}://${host}`;
+}
+
+async function consultarPagamentoInfinitePay(orderNsu) {
+  if (!INFINITEPAY_HANDLE) {
+    return { pago: false, erro: 'INFINITEPAY_HANDLE não configurado no servidor.' };
+  }
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (INFINITEPAY_API_KEY) {
+    headers['X-Api-Key'] = INFINITEPAY_API_KEY;
+  }
+
+  const resp = await fetch(INFINITEPAY_CHECK_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      handle: INFINITEPAY_HANDLE,
+      order_nsu: orderNsu
+    })
+  });
+
+  if (!resp.ok) {
+    const texto = await resp.text();
+    return { pago: false, erro: `Falha na consulta InfinitePay: ${texto}` };
+  }
+
+  const data = await resp.json();
+  const pago = Boolean(
+    data &&
+      (data.paid === true ||
+        data.status === 'paid' ||
+        data.payment_status === 'paid')
+  );
+
+  return { pago, raw: data };
+}
+
+function efetivarPedidoPago(orderNsu, detalhePagamento = null) {
+  const pedidos = lerJSON(PEDIDOS_PATH);
+  const idx = pedidos.findIndex(p => p.order_nsu === orderNsu);
+  if (idx === -1) {
+    return { ok: false, statusCode: 404, erro: 'Pedido não encontrado.' };
+  }
+
+  const pedido = pedidos[idx];
+  if (pedido.status === 'pago') {
+    return { ok: true, jaConfirmado: true, pedido };
+  }
+
+  const preparado = prepararRegistroVenda({
+    modalidade: pedido.modalidade,
+    selecao: pedido.selecao,
+    valor: pedido.valor,
+    origem: 'landing',
+    produto: pedido.produto,
+    lead: pedido.lead,
+    orderNsu: pedido.order_nsu
+  });
+
+  if (preparado.erro) {
+    return { ok: false, statusCode: 400, erro: preparado.erro };
+  }
+
+  pedido.status = 'pago';
+  pedido.pagoEm = new Date().toISOString();
+  pedido.detalhePagamento = detalhePagamento;
+  pedidos[idx] = pedido;
+  salvarJSON(PEDIDOS_PATH, pedidos);
+
+  const vendas = lerJSON(VENDAS_PATH);
+  vendas.unshift(preparado.venda);
+  salvarJSON(VENDAS_PATH, vendas);
+
+  return { ok: true, jaConfirmado: false, pedido, venda: preparado.venda };
+}
+
 app.get('/api/catalogo', (req, res) => {
   try {
     const catalogo = lerJSON(CATALOGO_PATH);
@@ -128,10 +278,14 @@ app.get('/api/catalogo', (req, res) => {
 app.get('/api/vendas', (req, res) => {
   try {
     const vendas = lerJSON(VENDAS_PATH);
+    const pedidos = lerJSON(PEDIDOS_PATH);
+    const pendentes = pedidos.filter(p => p.status !== 'pago').length;
     const totalArrecadado = vendas.reduce((acc, v) => acc + v.valor, 0);
     const retornoPotencialTotal = vendas.reduce((acc, v) => acc + (v.retornoPotencial || 0), 0);
+
     res.json({
       totalRegistros: vendas.length,
+      pedidosPendentes: pendentes,
       totalArrecadado: Number(totalArrecadado.toFixed(2)),
       retornoPotencialTotal: Number(retornoPotencialTotal.toFixed(2)),
       vendas
@@ -142,60 +296,16 @@ app.get('/api/vendas', (req, res) => {
 });
 
 app.post('/api/vendas', (req, res) => {
-  const { modalidade, selecao, valor, origem } = req.body;
-
-  const cfg = COTACOES[modalidade];
-  if (!cfg) {
-    return res.status(400).json({ erro: 'Modalidade inválida.' });
+  const preparado = prepararRegistroVenda(req.body);
+  if (preparado.erro) {
+    return res.status(400).json({ erro: preparado.erro });
   }
-
-  const valorNumerico = Number(valor);
-  if (isNaN(valorNumerico) || valorNumerico < 0.01) {
-    return res.status(400).json({ erro: 'O valor da venda deve ser maior ou igual a 0,01.' });
-  }
-
-  const listaBruta = Array.isArray(selecao) ? selecao : [selecao];
-  if (listaBruta.length !== cfg.qtd) {
-    return res.status(400).json({
-      erro: `${cfg.nome} (${cfg.codigo}) exige exatamente ${cfg.qtd} ${cfg.tipo}(s).`
-    });
-  }
-
-  const validados = [];
-  for (const raw of listaBruta) {
-    const resItem = validarItem(raw, cfg.tipo);
-    if (resItem.erro) {
-      return res.status(400).json({ erro: resItem.erro });
-    }
-    validados.push(resItem);
-  }
-
-  const selecaoFinal = cfg.qtd === 1 ? validados[0].valor : validados.map(v => v.valor);
-  const ordenados = [...validados].sort((a, b) => a.ordem - b.ordem).map(v => v.valor);
-  const chaveNormalizada = `${cfg.codigo}-${ordenados.join('-')}`;
-
-  const valorFormatado = Number(valorNumerico.toFixed(2));
-  const retornoPotencial = Number((valorFormatado * cfg.multiplicador).toFixed(2));
-  const origemLimpa = origem === 'landing' ? 'landing' : 'presencial';
-
-  const novaVenda = {
-    id: `VND-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    dataHora: new Date().toISOString(),
-    origem: origemLimpa,
-    modalidade: cfg.codigo,
-    nomeModalidade: cfg.nome,
-    multiplicador: cfg.multiplicador,
-    selecao: selecaoFinal,
-    chaveNormalizada,
-    valor: valorFormatado,
-    retornoPotencial
-  };
 
   const vendas = lerJSON(VENDAS_PATH);
-  vendas.unshift(novaVenda);
+  vendas.unshift(preparado.venda);
   salvarJSON(VENDAS_PATH, vendas);
 
-  res.status(201).json(novaVenda);
+  res.status(201).json(preparado.venda);
 });
 
 app.delete('/api/vendas/:id', (req, res) => {
@@ -211,6 +321,197 @@ app.delete('/api/vendas/:id', (req, res) => {
   res.json({ sucesso: true });
 });
 
+// Motor único de checkout para Landing Pages (InfinitePay)
+app.post('/api/checkout/criar', async (req, res) => {
+  if (!INFINITEPAY_HANDLE) {
+    return res.status(400).json({
+      erro: 'Configure INFINITEPAY_HANDLE no ambiente antes de gerar checkout.'
+    });
+  }
+
+  const { modalidade, selecao, valor, produto, lead, retornoUrl } = req.body;
+
+  const valorNumerico = Number(valor);
+  if (isNaN(valorNumerico) || valorNumerico < VALOR_MINIMO_CHECKOUT) {
+    return res.status(400).json({
+      erro: `O checkout exige valor mínimo de R$ ${VALOR_MINIMO_CHECKOUT.toFixed(2)}.`
+    });
+  }
+
+  const nomeLead = String((lead && lead.nome) || '').trim();
+  const contatoLead = String((lead && lead.contato) || '').trim();
+  if (!nomeLead || !contatoLead) {
+    return res.status(400).json({
+      erro: 'Preencha nome e contato/WhatsApp para caso você ganhe no sorteio.'
+    });
+  }
+
+  const preparado = prepararRegistroVenda({
+    modalidade,
+    selecao,
+    valor: valorNumerico,
+    origem: 'landing',
+    produto: produto || 'Produto Base',
+    lead: { nome: nomeLead, contato: contatoLead }
+  });
+
+  if (preparado.erro) {
+    return res.status(400).json({ erro: preparado.erro });
+  }
+
+  const orderNsu = `NSU-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+  const baseUrl = getBaseUrl(req);
+  const redirectUrl =
+    retornoUrl || `${baseUrl}/produto.html?order_nsu=${encodeURIComponent(orderNsu)}`;
+  const webhookUrl = `${baseUrl}/api/checkout/webhook`;
+
+  const priceCentavos = Math.round(preparado.venda.valor * 100);
+  const tituloProduto = String(produto || 'Produto Base').trim();
+  const exibicaoSelecao = Array.isArray(preparado.venda.selecao)
+    ? preparado.venda.selecao.join('-')
+    : preparado.venda.selecao;
+
+  const payloadInfinitePay = {
+    handle: INFINITEPAY_HANDLE,
+    order_nsu: orderNsu,
+    redirect_url: redirectUrl,
+    webhook_url: webhookUrl,
+    items: [
+      {
+        quantity: 1,
+        price: priceCentavos,
+        description: `${tituloProduto} (${preparado.venda.modalidade}: ${exibicaoSelecao})`
+      }
+    ]
+  };
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (INFINITEPAY_API_KEY) {
+    headers['X-Api-Key'] = INFINITEPAY_API_KEY;
+  }
+
+  try {
+    const resp = await fetch(INFINITEPAY_LINKS_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payloadInfinitePay)
+    });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      return res.status(502).json({
+        erro: data.message || data.erro || 'Falha ao criar link de pagamento na InfinitePay.'
+      });
+    }
+
+    const checkoutUrl =
+      data.url || data.checkout_url || data.payment_url || data.link || null;
+    if (!checkoutUrl) {
+      return res.status(502).json({
+        erro: 'InfinitePay não retornou URL de checkout.'
+      });
+    }
+
+    const pedidos = lerJSON(PEDIDOS_PATH);
+    pedidos.unshift({
+      order_nsu: orderNsu,
+      status: 'pendente',
+      criadoEm: new Date().toISOString(),
+      origem: 'landing',
+      produto: tituloProduto,
+      lead: { nome: nomeLead, contato: contatoLead },
+      modalidade: preparado.venda.modalidade,
+      selecao: preparado.venda.selecao,
+      chaveNormalizada: preparado.venda.chaveNormalizada,
+      valor: preparado.venda.valor,
+      retornoPotencial: preparado.venda.retornoPotencial,
+      checkoutUrl
+    });
+    salvarJSON(PEDIDOS_PATH, pedidos);
+
+    res.status(201).json({
+      order_nsu: orderNsu,
+      status: 'pendente',
+      checkout_url: checkoutUrl
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro de comunicação com a API da InfinitePay.' });
+  }
+});
+
+// Webhook da InfinitePay (sempre valida via payment_check antes de efetivar)
+app.post('/api/checkout/webhook', async (req, res) => {
+  const orderNsu =
+    (req.body && (req.body.order_nsu || req.body.orderNsu)) ||
+    req.query.order_nsu ||
+    '';
+
+  if (!orderNsu) {
+    return res.status(400).json({ erro: 'order_nsu ausente.' });
+  }
+
+  try {
+    const verificacao = await consultarPagamentoInfinitePay(String(orderNsu));
+    if (!verificacao.pago) {
+      return res.status(200).json({ recebido: true, pago: false });
+    }
+
+    const resultado = efetivarPedidoPago(String(orderNsu), verificacao.raw);
+    if (!resultado.ok) {
+      return res.status(resultado.statusCode).json({ erro: resultado.erro });
+    }
+
+    res.status(200).json({ recebido: true, pago: true, status: resultado.pedido.status });
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao processar webhook.' });
+  }
+});
+
+// Consulta/confirmação de pedido (usado no retorno da landing page)
+app.get('/api/checkout/status/:orderNsu', async (req, res) => {
+  const { orderNsu } = req.params;
+  const pedidos = lerJSON(PEDIDOS_PATH);
+  const pedido = pedidos.find(p => p.order_nsu === orderNsu);
+
+  if (!pedido) {
+    return res.status(404).json({ erro: 'Pedido não encontrado.' });
+  }
+
+  if (pedido.status === 'pago') {
+    return res.json({
+      order_nsu: pedido.order_nsu,
+      status: 'pago',
+      chaveNormalizada: pedido.chaveNormalizada,
+      valor: pedido.valor
+    });
+  }
+
+  try {
+    const verificacao = await consultarPagamentoInfinitePay(orderNsu);
+    if (verificacao.pago) {
+      const resultado = efetivarPedidoPago(orderNsu, verificacao.raw);
+      if (resultado.ok) {
+        return res.json({
+          order_nsu: orderNsu,
+          status: 'pago',
+          chaveNormalizada: pedido.chaveNormalizada,
+          valor: pedido.valor
+        });
+      }
+    }
+
+    res.json({
+      order_nsu: orderNsu,
+      status: pedido.status,
+      chaveNormalizada: pedido.chaveNormalizada,
+      valor: pedido.valor
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao consultar status do pagamento.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`99 da sorte rodando em http://localhost:${PORT}`);
 });
+  
