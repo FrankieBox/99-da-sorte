@@ -12,7 +12,6 @@ const VENDAS_PATH = path.join(DATA_DIR, 'vendas.json');
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Gera a lista oficial de dezenas: "01" até "99", terminando em "00"
 function gerarTodasDezenas() {
   const lista = [];
   for (let i = 1; i <= 99; i++) {
@@ -22,7 +21,6 @@ function gerarTodasDezenas() {
   return lista;
 }
 
-// Gera os 25 produtos principais, cada um com 4 subprodutos (dezenas)
 function gerarCatalogoPadrao() {
   const todasDezenas = gerarTodasDezenas();
   const produtos = [];
@@ -49,7 +47,6 @@ function gerarCatalogoPadrao() {
   };
 }
 
-// Inicializa a pasta data e os ficheiros JSON se não existirem
 function inicializarBancoJSON() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -75,7 +72,6 @@ inicializarBancoJSON();
 const GRUPOS_VALIDOS = new Set(Array.from({ length: 25 }, (_, i) => String(i + 1).padStart(2, '0')));
 const DEZENAS_VALIDAS = new Set(gerarTodasDezenas());
 
-// Rota: Retorna o catálogo completo
 app.get('/api/catalogo', (req, res) => {
   try {
     const catalogo = lerJSON(CATALOGO_PATH);
@@ -85,29 +81,6 @@ app.get('/api/catalogo', (req, res) => {
   }
 });
 
-// Rota: Atualiza o nome personalizado de um produto (01 a 25)
-app.put('/api/catalogo/produto/:id', (req, res) => {
-  const { id } = req.params;
-  const { nome } = req.body;
-
-  if (!GRUPOS_VALIDOS.has(id)) {
-    return res.status(400).json({ erro: 'Produto inválido. Use de 01 a 25.' });
-  }
-  if (!nome || typeof nome !== 'string' || !nome.trim()) {
-    return res.status(400).json({ erro: 'Nome inválido.' });
-  }
-
-  const catalogo = lerJSON(CATALOGO_PATH);
-  const produto = catalogo.produtos.find(p => p.id === id);
-  if (produto) {
-    produto.nome = nome.trim();
-    salvarJSON(CATALOGO_PATH, catalogo);
-  }
-
-  res.json(produto);
-});
-
-// Rota: Lista todas as vendas e resumo financeiro
 app.get('/api/vendas', (req, res) => {
   try {
     const vendas = lerJSON(VENDAS_PATH);
@@ -122,7 +95,6 @@ app.get('/api/vendas', (req, res) => {
   }
 });
 
-// Rota: Regista uma nova venda
 app.post('/api/vendas', (req, res) => {
   const { modalidade, selecao, valor } = req.body;
 
@@ -186,7 +158,6 @@ app.post('/api/vendas', (req, res) => {
   res.status(201).json(novaVenda);
 });
 
-// Rota: Remove uma venda pelo ID
 app.delete('/api/vendas/:id', (req, res) => {
   const { id } = req.params;
   const vendas = lerJSON(VENDAS_PATH);
@@ -201,5 +172,6 @@ app.delete('/api/vendas/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor a correr em http://localhost:${PORT}`);
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+q
