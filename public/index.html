@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerenciador de Produtos e Dezenas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Gerenciador de Produtos (01–25) &amp; Dezenas (01–00)</h1>
+    <div class="resumo-header">
+      <span>Vendas: <strong id="total-vendas">0</strong></span>
+      <span>Total: <strong id="total-valor">R$ 0,00</strong></span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Painel de Nova Venda -->
+    <section class="card">
+      <h2>Registrar Venda</h2>
+      <form id="form-venda" class="form-grid">
+        <div class="campo">
+          <label for="modalidade">Modalidade</label>
+          <select id="modalidade" required>
+            <option value="grupo">Unidade de Grupo (01 a 25)</option>
+            <option value="dezena">Unidade de Dezena (01 a 00)</option>
+            <option value="terno_dezena">Terno de Dezena (Pacote de 3 dezenas)</option>
+          </select>
+        </div>
+
+        <!-- Campo dinâmico para Grupo -->
+        <div class="campo" id="box-grupo">
+          <label for="input-grupo">Grupo (01 a 25)</label>
+          <select id="input-grupo"></select>
+        </div>
+
+        <!-- Campo dinâmico para Dezena -->
+        <div class="campo oculto" id="box-dezena">
+          <label for="input-dezena">Dezena (01 a 99, ou 00)</label>
+          <input type="text" id="input-dezena" maxlength="2" placeholder="Ex: 05 ou 00" />
+        </div>
+
+        <!-- Campos dinâmicos para Terno de Dezena -->
+        <div class="campo oculto" id="box-terno">
+          <label>3 Dezenas (repetição permitida, ordem livre)</label>
+          <div class="terno-inputs">
+            <input type="text" id="terno-1" maxlength="2" placeholder="1ª (ex: 05)" />
+            <input type="text" id="terno-2" maxlength="2" placeholder="2ª (ex: 05)" />
+            <input type="text" id="terno-3" maxlength="2" placeholder="3ª (ex: 00)" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="valor">Valor (R$ - mín. 0,01)</label>
+          <input type="number" id="valor" step="0.01" min="0.01" placeholder="10.00" required />
+        </div>
+
+        <div class="campo-acao">
+          <button type="submit" class="btn-primario">Confirmar Venda</button>
+        </div>
+      </form>
+      <p id="feedback-msg" class="feedback"></p>
+    </section>
+
+    <!-- Catálogo dos 25 Produtos e 100 Subprodutos -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Catálogo (25 Produtos × 4 Subprodutos)</h2>
+        <span class="badge">Estoque Ilimitado</span>
+      </div>
+      <div id="grid-catalogo" class="grid-catalogo"></div>
+    </section>
+
+    <!-- Histórico de Vendas -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Histórico de Vendas (BD JSON)</h2>
+        <input type="text" id="filtro-vendas" placeholder="Filtrar por modalidade, dezena ou chave..." />
+      </div>
+      <div id="lista-vendas" class="lista-vendas"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
