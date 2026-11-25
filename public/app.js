@@ -227,7 +227,8 @@ function renderizarVendas() {
       String(v.nomeModalidade || '').toLowerCase().includes(termo) ||
       textoSelecao.toLowerCase().includes(termo) ||
       String(v.chaveNormalizada).toLowerCase().includes(termo) ||
-      String(v.origem || '').toLowerCase().includes(termo)
+      String(v.origem || '').toLowerCase().includes(termo) ||
+      String(v.produto || '').toLowerCase().includes(termo)
     );
   });
 
@@ -244,6 +245,7 @@ function renderizarVendas() {
         minute: '2-digit'
       });
       const canalLabel = v.origem === 'landing' ? 'Landing Page' : 'Presencial';
+      const leadInfo = v.lead && v.lead.nome ? ` • ${v.lead.nome}` : '';
       return `
         <div class="wa-bolha">
           <div class="wa-bolha-topo">
@@ -255,7 +257,7 @@ function renderizarVendas() {
             <span class="venda-valor">${formatarMoeda(v.valor)}</span>
           </div>
           <div class="wa-bolha-rodape">
-            <span>${v.chaveNormalizada} • Ret.: ${formatarMoeda(v.retornoPotencial || 0)}</span>
+            <span>${v.chaveNormalizada}${leadInfo} • Ret.: ${formatarMoeda(v.retornoPotencial || 0)}</span>
             <div class="wa-meta-dir">
               <span>${horaFormatada}</span>
               <span class="wa-check">✓✓</span>
