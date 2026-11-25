@@ -1,19 +1,140 @@
 const COTACOES = {
-  M: { nome: 'Milhar', codigo: 'M', multiplicador: 6000, qtd: 1, maxDigitos: 4, tipo: 'milhar' },
-  C: { nome: 'Centena', codigo: 'C', multiplicador: 600, qtd: 1, maxDigitos: 3, tipo: 'centena' },
-  DZ: { nome: 'Dezena', codigo: 'DZ', multiplicador: 50, qtd: 1, maxDigitos: 2, tipo: 'dezena' },
-  U: { nome: 'Unidade', codigo: 'U', multiplicador: 5, qtd: 1, maxDigitos: 1, tipo: 'unidade' },
-  G: { nome: 'Grupo', codigo: 'G', multiplicador: 15, qtd: 1, maxDigitos: 2, tipo: 'grupo' },
-  DG: { nome: 'Dupla de Grupo', codigo: 'DG', multiplicador: 16, qtd: 2, maxDigitos: 2, tipo: 'grupo' },
-  TG: { nome: 'Terno de Grupo', codigo: 'TG', multiplicador: 100, qtd: 3, maxDigitos: 2, tipo: 'grupo' },
-  PAS: { nome: 'Passe', codigo: 'PAS', multiplicador: 75, qtd: 2, maxDigitos: 2, tipo: 'grupo' },
-  DDZ: { nome: 'Duque de Dezena', codigo: 'DDZ', multiplicador: 200, qtd: 2, maxDigitos: 2, tipo: 'dezena' },
-  TDZ: { nome: 'Terno de Dezena', codigo: 'TDZ', multiplicador: 6000, qtd: 3, maxDigitos: 2, tipo: 'dezena' }
+  M: {
+    nome: 'Milhar',
+    codigo: 'M',
+    multiplicador: 6000,
+    qtd: 1,
+    maxDigitos: 4,
+    tipo: 'milhar',
+    universo: '10.000 números (0000 a 9999)',
+    chance: '1 em 10.000',
+    percentual: '0,01%',
+    regraLanding:
+      'Concorra escolhendo 1 milhar de 4 dígitos (de 0000 a 9999). São 10.000 combinações possíveis no sorteio único compartilhado. Se a milhar sorteada corresponder ao seu bilhete, você leva o prêmio.'
+  },
+  C: {
+    nome: 'Centena',
+    codigo: 'C',
+    multiplicador: 600,
+    qtd: 1,
+    maxDigitos: 3,
+    tipo: 'centena',
+    universo: '1.000 números (000 a 999)',
+    chance: '1 em 1.000',
+    percentual: '0,10%',
+    regraLanding:
+      'Concorra escolhendo 1 centena de 3 dígitos (de 000 a 999). São 1.000 combinações possíveis no sorteio único. Você ganha se os 3 dígitos finais do resultado coincidirem com a sua centena.'
+  },
+  DZ: {
+    nome: 'Dezena',
+    codigo: 'DZ',
+    multiplicador: 50,
+    qtd: 1,
+    maxDigitos: 2,
+    tipo: 'dezena',
+    universo: '100 dezenas (01 a 99 e 00)',
+    chance: '1 em 100',
+    percentual: '1,00%',
+    regraLanding:
+      'Concorra escolhendo 1 dezena (de 01 a 99 ou 00). São 100 dezenas possíveis no sorteio único. Se a dezena final do resultado for a mesma do seu bilhete, você é contemplado.'
+  },
+  U: {
+    nome: 'Unidade',
+    codigo: 'U',
+    multiplicador: 5,
+    qtd: 1,
+    maxDigitos: 1,
+    tipo: 'unidade',
+    universo: '10 dígitos (0 a 9)',
+    chance: '1 em 10',
+    percentual: '10,00%',
+    regraLanding:
+      'Concorra escolhendo 1 unidade final (de 0 a 9). São apenas 10 possibilidades no sorteio único, oferecendo a maior chance direta de acerto entre todas as modalidades.'
+  },
+  G: {
+    nome: 'Grupo',
+    codigo: 'G',
+    multiplicador: 15,
+    qtd: 1,
+    maxDigitos: 2,
+    tipo: 'grupo',
+    universo: '25 grupos (01 a 25 — 4 dezenas por grupo)',
+    chance: '1 em 25',
+    percentual: '4,00%',
+    regraLanding:
+      'Concorra escolhendo 1 grupo entre 01 e 25. Cada grupo reúne 4 dezenas sequenciais (ex.: Grupo 01 = 01, 02, 03 e 04). Você ganha se a dezena sorteada pertencer ao seu grupo.'
+  },
+  DG: {
+    nome: 'Dupla de Grupo',
+    codigo: 'DG',
+    multiplicador: 16,
+    qtd: 2,
+    maxDigitos: 2,
+    tipo: 'grupo',
+    universo: '300 pares distintos entre os 25 grupos (01 a 25)',
+    chance: '1 em 300 (sem ordem)',
+    percentual: '0,33%',
+    regraLanding:
+      'Concorra escolhendo 2 grupos entre 01 e 25 (ordem livre e repetição permitida no registro). Você é contemplado quando os 2 grupos escolhidos aparecem nos resultados válidos do sorteio.'
+  },
+  TG: {
+    nome: 'Terno de Grupo',
+    codigo: 'TG',
+    multiplicador: 100,
+    qtd: 3,
+    maxDigitos: 2,
+    tipo: 'grupo',
+    universo: '2.300 trios distintos entre os 25 grupos (01 a 25)',
+    chance: '1 em 2.300 (sem ordem)',
+    percentual: '0,043%',
+    regraLanding:
+      'Concorra escolhendo 3 grupos entre 01 e 25 (ordem livre e repetição permitida no registro). Você ganha quando os 3 grupos selecionados saírem entre os resultados válidos do sorteio.'
+  },
+  PAS: {
+    nome: 'Passe',
+    codigo: 'PAS',
+    multiplicador: 75,
+    qtd: 2,
+    maxDigitos: 2,
+    tipo: 'grupo',
+    universo: '300 combinações de 2 grupos (01 a 25)',
+    chance: '1 em 300 (pares) / 1 em 600 (ordem fixa)',
+    percentual: '0,33% / 0,17%',
+    regraLanding:
+      'Concorra escolhendo 2 grupos entre 01 e 25 na modalidade Passe. A apuração considera a combinação dos dois grupos conforme as posições definidas para o sorteio do produto.'
+  },
+  DDZ: {
+    nome: 'Duque de Dezena',
+    codigo: 'DDZ',
+    multiplicador: 200,
+    qtd: 2,
+    maxDigitos: 2,
+    tipo: 'dezena',
+    universo: '4.950 pares distintos entre 100 dezenas (01 a 00)',
+    chance: '1 em 4.950 (sem ordem)',
+    percentual: '0,020%',
+    regraLanding:
+      'Concorra escolhendo 2 dezenas entre 01 e 00 (ordem livre). Você é contemplado quando as 2 dezenas escolhidas aparecerem entre os resultados válidos do sorteio compartilhado.'
+  },
+  TDZ: {
+    nome: 'Terno de Dezena',
+    codigo: 'TDZ',
+    multiplicador: 6000,
+    qtd: 3,
+    maxDigitos: 2,
+    tipo: 'dezena',
+    universo: '161.700 trios distintos entre 100 dezenas (01 a 00)',
+    chance: '1 em 161.700 (sem ordem)',
+    percentual: '0,00062%',
+    regraLanding:
+      'Concorra escolhendo um pacote com 3 dezenas entre 01 e 00 (ordem livre e repetição permitida no registro). Você ganha quando as 3 dezenas do seu bilhete forem sorteadas.'
+  }
 };
 
 const abaBtns = document.querySelectorAll('.wa-tab');
 const abaVendasEl = document.getElementById('aba-vendas');
 const abaSimuladorEl = document.getElementById('aba-simulador');
+const abaProbabilidadesEl = document.getElementById('aba-probabilidades');
 
 const modalidadeEl = document.getElementById('modalidade');
 const origemEl = document.getElementById('origem');
@@ -34,6 +155,7 @@ const simCodigoEl = document.getElementById('sim-codigo');
 const simMultEl = document.getElementById('sim-mult');
 const simRetornoEl = document.getElementById('sim-retorno');
 const btnUsarSimulacaoEl = document.getElementById('btn-usar-simulacao');
+const listaProbabilidadesEl = document.getElementById('lista-probabilidades');
 
 let vendasCache = [];
 let alvoVendas = 'item-0';
@@ -60,8 +182,68 @@ abaBtns.forEach(btn => {
     abaBtns.forEach(b => b.classList.toggle('ativa', b.dataset.aba === aba));
     abaVendasEl.classList.toggle('oculto', aba !== 'vendas');
     abaSimuladorEl.classList.toggle('oculto', aba !== 'simulador');
+    abaProbabilidadesEl.classList.toggle('oculto', aba !== 'probabilidades');
   });
 });
+
+function renderizarProbabilidades() {
+  listaProbabilidadesEl.innerHTML = Object.values(COTACOES)
+    .map(cfg => {
+      return `
+        <article class="prob-card">
+          <div class="prob-topo">
+            <div class="prob-titulo">
+              <span class="tag-mod">${cfg.codigo}</span>
+              <span>${cfg.nome}</span>
+            </div>
+            <span class="prob-cotacao">${cfg.multiplicador}x</span>
+          </div>
+
+          <div class="prob-grid">
+            <div class="prob-stat">
+              <span>Universo</span>
+              <strong>${cfg.universo}</strong>
+            </div>
+            <div class="prob-stat">
+              <span>Chance (1 bilhete)</span>
+              <strong>${cfg.chance}</strong>
+            </div>
+            <div class="prob-stat">
+              <span>Probabilidade</span>
+              <strong>${cfg.percentual}</strong>
+            </div>
+          </div>
+
+          <div class="prob-regra">
+            <strong>Regra para Landing Page</strong>
+            <span>${cfg.regraLanding}</span>
+          </div>
+
+          <button type="button" class="btn-copiar-regra" data-codigo="${cfg.codigo}">
+            Copiar Regra (${cfg.codigo})
+          </button>
+        </article>
+      `;
+    })
+    .join('');
+
+  listaProbabilidadesEl.querySelectorAll('.btn-copiar-regra').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cfg = COTACOES[btn.dataset.codigo];
+      if (!cfg) return;
+      try {
+        await navigator.clipboard.writeText(cfg.regraLanding);
+        const original = btn.textContent;
+        btn.textContent = 'Regra Copiada ✓';
+        setTimeout(() => {
+          btn.textContent = original;
+        }, 1800);
+      } catch (e) {
+        alert(cfg.regraLanding);
+      }
+    });
+  });
+}
 
 function construirVisoresSelecao() {
   const cfg = COTACOES[modalidadeEl.value];
@@ -205,6 +387,7 @@ btnUsarSimulacaoEl.addEventListener('click', () => {
   abaBtns.forEach(b => b.classList.toggle('ativa', b.dataset.aba === 'vendas'));
   abaVendasEl.classList.remove('oculto');
   abaSimuladorEl.classList.add('oculto');
+  abaProbabilidadesEl.classList.add('oculto');
 });
 
 async function carregarVendas() {
@@ -309,4 +492,6 @@ window.excluirVenda = async function (id) {
 
 construirVisoresSelecao();
 atualizarSimulador();
+renderizarProbabilidades();
 carregarVendas();
+  
