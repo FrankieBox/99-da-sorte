@@ -172,6 +172,5 @@ app.delete('/api/vendas/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+  console.log(`Servidor a correr em http://localhost:${PORT}`);
 });
-q
