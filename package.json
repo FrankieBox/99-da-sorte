@@ -1,7 +1,7 @@
 {
   "name": "99-da-sorte",
-  "version": "1.3.0",
-  "description": "99 da sorte — Terminal de vendas estilo WhatsApp com 10 modalidades, simulador de cotacoes e BD JSON",
+  "version": "1.4.0",
+  "description": "99 da sorte — Terminal de vendas, simulador, BD JSON, base de landing pages e checkout InfinitePay",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
