@@ -2,21 +2,33 @@ const modalidadeEl = document.getElementById('modalidade');
 const boxGrupoEl = document.getElementById('box-grupo');
 const boxDezenaEl = document.getElementById('box-dezena');
 const boxTernoEl = document.getElementById('box-terno');
-const inputGrupoEl = document.getElementById('input-grupo');
-const inputDezenaEl = document.getElementById('input-dezena');
-const terno1El = document.getElementById('terno-1');
-const terno2El = document.getElementById('terno-2');
-const terno3El = document.getElementById('terno-3');
-const valorEl = document.getElementById('valor');
+
+const dispGrupoEl = document.getElementById('disp-grupo');
+const dispDezenaEl = document.getElementById('disp-dezena');
+const dispTernoEls = [
+  document.getElementById('disp-terno-0'),
+  document.getElementById('disp-terno-1'),
+  document.getElementById('disp-terno-2')
+];
+const dispValorEl = document.getElementById('disp-valor');
+
 const formVendaEl = document.getElementById('form-venda');
 const feedbackEl = document.getElementById('feedback-msg');
-const gridCatalogoEl = document.getElementById('grid-catalogo');
 const listaVendasEl = document.getElementById('lista-vendas');
 const filtroVendasEl = document.getElementById('filtro-vendas');
 const totalVendasEl = document.getElementById('total-vendas');
 const totalValorEl = document.getElementById('total-valor');
+const numpadEl = document.getElementById('numpad');
 
 let vendasCache = [];
+let alvoAtivo = 'grupo';
+
+const estado = {
+  grupo: '',
+  dezena: '',
+  terno: ['', '', ''],
+  centavos: 0
+};
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -27,86 +39,100 @@ function mostrarFeedback(texto, tipo = 'sucesso') {
   feedbackEl.className = `feedback ${tipo}`;
 }
 
-// Alterna os campos conforme a modalidade
+function definirAlvo(novoAlvo) {
+  alvoAtivo = novoAlvo;
+  document.querySelectorAll('.visor-box').forEach(box => {
+    box.classList.toggle('ativo', box.dataset.alvo === novoAlvo);
+  });
+}
+
+document.querySelectorAll('.visor-box').forEach(box => {
+  box.addEventListener('click', () => {
+    definirAlvo(box.dataset.alvo);
+  });
+});
+
+function atualizarVisores() {
+  dispGrupoEl.textContent = estado.grupo ? estado.grupo.padStart(2, '0') : '--';
+  dispDezenaEl.textContent = estado.dezena ? estado.dezena.padStart(2, '0') : '--';
+  dispTernoEls.forEach((el, idx) => {
+    const val = estado.terno[idx];
+    el.textContent = val ? val.padStart(2, '0') : '--';
+  });
+  dispValorEl.textContent = formatarMoeda(estado.centavos / 100);
+}
+
 modalidadeEl.addEventListener('change', () => {
   const mod = modalidadeEl.value;
   boxGrupoEl.classList.toggle('oculto', mod !== 'grupo');
   boxDezenaEl.classList.toggle('oculto', mod !== 'dezena');
   boxTernoEl.classList.toggle('oculto', mod !== 'terno_dezena');
   feedbackEl.textContent = '';
+
+  if (mod === 'grupo') definirAlvo('grupo');
+  else if (mod === 'dezena') definirAlvo('dezena');
+  else definirAlvo('terno-0');
 });
 
-// Carrega catálogo dos 25 grupos e 100 dezenas
-async function carregarCatalogo() {
-  const res = await fetch('/api/catalogo');
-  const data = await res.json();
-
-  inputGrupoEl.innerHTML = '';
-  gridCatalogoEl.innerHTML = '';
-
-  data.produtos.forEach(prod => {
-    // Preenche o select de grupo
-    const opt = document.createElement('option');
-    opt.value = prod.id;
-    opt.textContent = `${prod.id} - ${prod.nome} (${prod.dezenas.join(', ')})`;
-    inputGrupoEl.appendChild(opt);
-
-    // Monta o card no catálogo
-    const box = document.createElement('div');
-    box.className = 'produto-box';
-
-    const dezenasHTML = prod.dezenas
-      .map(d => `<div class="dezena-chip" title="Selecionar dezena ${d}" onclick="selecionarDezenaRapida('${d}')">${d}</div>`)
-      .join('');
-
-    box.innerHTML = `
-      <div class="produto-topo">
-        <span class="produto-id">Grupo ${prod.id}</span>
-        <span class="produto-nome" title="Clique para renomear" onclick="renomearProduto('${prod.id}', '${prod.nome}')">${prod.nome}</span>
-      </div>
-      <div class="dezenas-row">${dezenasHTML}</div>
-    `;
-    gridCatalogoEl.appendChild(box);
-  });
+function adicionarDigito(digito) {
+  if (alvoAtivo === 'valor') {
+    if (estado.centavos <= 99999999) {
+      estado.centavos = estado.centavos * 10 + Number(digito);
+    }
+  } else if (alvoAtivo === 'grupo') {
+    if (estado.grupo.length >= 2) estado.grupo = digito;
+    else estado.grupo += digito;
+  } else if (alvoAtivo === 'dezena') {
+    if (estado.dezena.length >= 2) estado.dezena = digito;
+    else estado.dezena += digito;
+  } else if (alvoAtivo.startsWith('terno-')) {
+    const idx = Number(alvoAtivo.split('-')[1]);
+    const atual = estado.terno[idx] || '';
+    if (atual.length >= 2) {
+      estado.terno[idx] = digito;
+    } else {
+      estado.terno[idx] = atual + digito;
+      if (estado.terno[idx].length === 2 && idx < 2) {
+        definirAlvo(`terno-${idx + 1}`);
+      }
+    }
+  }
+  atualizarVisores();
 }
 
-// Clique rápido na dezena do catálogo preenche o formulário
-window.selecionarDezenaRapida = function (dezena) {
-  const mod = modalidadeEl.value;
-  if (mod === 'terno_dezena') {
-    if (!terno1El.value) terno1El.value = dezena;
-    else if (!terno2El.value) terno2El.value = dezena;
-    else if (!terno3El.value) terno3El.value = dezena;
-    else {
-      terno1El.value = dezena;
-      terno2El.value = '';
-      terno3El.value = '';
-    }
-  } else {
-    modalidadeEl.value = 'dezena';
-    modalidadeEl.dispatchEvent(new Event('change'));
-    inputDezenaEl.value = dezena;
+function apagarDigito() {
+  if (alvoAtivo === 'valor') {
+    estado.centavos = Math.floor(estado.centavos / 10);
+  } else if (alvoAtivo === 'grupo') {
+    estado.grupo = estado.grupo.slice(0, -1);
+  } else if (alvoAtivo === 'dezena') {
+    estado.dezena = estado.dezena.slice(0, -1);
+  } else if (alvoAtivo.startsWith('terno-')) {
+    const idx = Number(alvoAtivo.split('-')[1]);
+    estado.terno[idx] = (estado.terno[idx] || '').slice(0, -1);
   }
-  valorEl.focus();
-};
+  atualizarVisores();
+}
 
-// Permite renomear qualquer um dos 25 produtos
-window.renomearProduto = async function (id, nomeAtual) {
-  const novoNome = prompt(`Novo nome para o Produto ${id}:`, nomeAtual);
-  if (!novoNome || novoNome.trim() === nomeAtual) return;
-
-  const res = await fetch(`/api/catalogo/produto/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nome: novoNome.trim() })
-  });
-
-  if (res.ok) {
-    await carregarCatalogo();
+function limparAlvo() {
+  if (alvoAtivo === 'valor') estado.centavos = 0;
+  else if (alvoAtivo === 'grupo') estado.grupo = '';
+  else if (alvoAtivo === 'dezena') estado.dezena = '';
+  else if (alvoAtivo.startsWith('terno-')) {
+    const idx = Number(alvoAtivo.split('-')[1]);
+    estado.terno[idx] = '';
   }
-};
+  atualizarVisores();
+}
 
-// Carrega o histórico de vendas
+numpadEl.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  if (btn.dataset.digito !== undefined) adicionarDigito(btn.dataset.digito);
+  else if (btn.dataset.acao === 'apagar') apagarDigito();
+  else if (btn.dataset.acao === 'limpar') limparAlvo();
+});
+
 async function carregarVendas() {
   const res = await fetch('/api/vendas');
   const data = await res.json();
@@ -163,20 +189,15 @@ function renderizarVendas() {
 
 filtroVendasEl.addEventListener('input', renderizarVendas);
 
-// Envia nova venda
 formVendaEl.addEventListener('submit', async e => {
   e.preventDefault();
   const modalidade = modalidadeEl.value;
-  const valor = parseFloat(valorEl.value);
+  const valor = estado.centavos / 100;
 
   let selecao;
-  if (modalidade === 'grupo') {
-    selecao = inputGrupoEl.value;
-  } else if (modalidade === 'dezena') {
-    selecao = inputDezenaEl.value;
-  } else if (modalidade === 'terno_dezena') {
-    selecao = [terno1El.value, terno2El.value, terno3El.value];
-  }
+  if (modalidade === 'grupo') selecao = estado.grupo;
+  else if (modalidade === 'dezena') selecao = estado.dezena;
+  else if (modalidade === 'terno_dezena') selecao = [...estado.terno];
 
   const res = await fetch('/api/vendas', {
     method: 'POST',
@@ -190,12 +211,16 @@ formVendaEl.addEventListener('submit', async e => {
     return;
   }
 
-  mostrarFeedback(`Venda registrada com sucesso (${data.chaveNormalizada})!`, 'sucesso');
-  inputDezenaEl.value = '';
-  terno1El.value = '';
-  terno2El.value = '';
-  terno3El.value = '';
-  valorEl.value = '';
+  mostrarFeedback(`Venda registrada (${data.chaveNormalizada})!`, 'sucesso');
+  estado.grupo = '';
+  estado.dezena = '';
+  estado.terno = ['', '', ''];
+  estado.centavos = 0;
+  atualizarVisores();
+
+  if (modalidade === 'grupo') definirAlvo('grupo');
+  else if (modalidade === 'dezena') definirAlvo('dezena');
+  else definirAlvo('terno-0');
 
   await carregarVendas();
 });
@@ -207,6 +232,5 @@ window.excluirVenda = async function (id) {
   }
 };
 
-// Inicialização
-carregarCatalogo();
+atualizarVisores();
 carregarVendas();
