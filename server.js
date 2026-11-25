@@ -203,4 +203,3 @@ app.delete('/api/vendas/:id', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor a correr em http://localhost:${PORT}`);
 });
-a
