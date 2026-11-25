@@ -1,7 +1,7 @@
 {
-  "name": "gerenciador-produtos-dezenas",
-  "version": "1.0.0",
-  "description": "Gerenciador de 25 grupos, 100 dezenas e vendas por grupo, dezena e terno de dezena com BD JSON",
+  "name": "99-da-sorte",
+  "version": "1.3.0",
+  "description": "99 da sorte — Terminal de vendas estilo WhatsApp com 10 modalidades, simulador de cotacoes e BD JSON",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
