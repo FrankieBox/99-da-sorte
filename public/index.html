@@ -3,103 +3,171 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerenciador de Vendas - Grupos e Dezenas</title>
+  <title>99 da sorte</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>Gerenciador de Vendas (01–25 / 01–00)</h1>
-    <div class="resumo-header">
-      <span>Vendas: <strong id="total-vendas">0</strong></span>
-      <span>Total: <strong id="total-valor">R$ 0,00</strong></span>
+  <header class="wa-header">
+    <div class="wa-header-top">
+      <div class="wa-brand">
+        <div class="wa-avatar">99</div>
+        <div>
+          <div class="wa-title">99 da sorte</div>
+          <div class="wa-status">● online • BD JSON</div>
+        </div>
+      </div>
+      <div class="wa-metrics">
+        <span class="wa-pill">Qtd: <strong id="total-vendas">0</strong></span>
+        <span class="wa-pill">Total: <strong id="total-valor">R$ 0,00</strong></span>
+      </div>
     </div>
+
+    <nav class="wa-tabs">
+      <button type="button" class="wa-tab ativa" data-aba="vendas">VENDAS</button>
+      <button type="button" class="wa-tab" data-aba="simulador">COTAÇÕES</button>
+    </nav>
   </header>
 
-  <main class="container">
-    <section class="card">
-      <h2>Registrar Venda</h2>
+  <main class="wa-chat-bg">
+    <div class="wa-container">
+      <!-- ABA 1: VENDAS -->
+      <section id="aba-vendas" class="aba-conteudo">
+        <div class="wa-card">
+          <div class="wa-card-titulo">Novo Lançamento</div>
 
-      <form id="form-venda">
-        <div class="campo">
-          <label for="modalidade">Modalidade</label>
-          <select id="modalidade">
-            <option value="grupo">Unidade de Grupo (01 a 25)</option>
-            <option value="dezena">Unidade de Dezena (01 a 00)</option>
-            <option value="terno_dezena">Terno de Dezena (3 dezenas)</option>
-          </select>
-        </div>
+          <form id="form-venda">
+            <div class="linha-dupla">
+              <div class="campo">
+                <label for="modalidade">Modalidade</label>
+                <select id="modalidade">
+                  <option value="M">Milhar (M) — 6000x</option>
+                  <option value="C">Centena (C) — 600x</option>
+                  <option value="DZ">Dezena (DZ) — 50x</option>
+                  <option value="U">Unidade (U) — 5x</option>
+                  <option value="G">Grupo (G) — 15x</option>
+                  <option value="DG">Dupla de Grupo (DG) — 16x</option>
+                  <option value="TG">Terno de Grupo (TG) — 100x</option>
+                  <option value="PAS">Passe (PAS) — 75x</option>
+                  <option value="DDZ">Duque de Dezena (DDZ) — 200x</option>
+                  <option value="TDZ">Terno de Dezena (TDZ) — 6000x</option>
+                </select>
+              </div>
 
-        <!-- Modo Grupo -->
-        <div id="box-grupo" class="bloco-alvo">
-          <div class="visor-box ativo" data-alvo="grupo">
-            <span class="visor-label">Grupo (01–25)</span>
-            <span class="visor-valor" id="disp-grupo">--</span>
-          </div>
-        </div>
-
-        <!-- Modo Dezena -->
-        <div id="box-dezena" class="bloco-alvo oculto">
-          <div class="visor-box ativo" data-alvo="dezena">
-            <span class="visor-label">Dezena (01–99 ou 00)</span>
-            <span class="visor-valor" id="disp-dezena">--</span>
-          </div>
-        </div>
-
-        <!-- Modo Terno -->
-        <div id="box-terno" class="bloco-alvo oculto">
-          <div class="terno-grid">
-            <div class="visor-box ativo" data-alvo="terno-0">
-              <span class="visor-label">1ª Dezena</span>
-              <span class="visor-valor" id="disp-terno-0">--</span>
+              <div class="campo">
+                <label for="origem">Origem</label>
+                <select id="origem">
+                  <option value="presencial">Presencial</option>
+                  <option value="landing">Landing Page</option>
+                </select>
+              </div>
             </div>
-            <div class="visor-box" data-alvo="terno-1">
-              <span class="visor-label">2ª Dezena</span>
-              <span class="visor-valor" id="disp-terno-1">--</span>
+
+            <div id="visores-selecao" class="bloco-alvo"></div>
+
+            <div class="bloco-alvo">
+              <div class="visor-box" data-alvo="valor">
+                <span class="visor-label">Valor (mín. R$ 0,01)</span>
+                <span class="visor-valor" id="disp-valor">R$ 0,00</span>
+              </div>
             </div>
-            <div class="visor-box" data-alvo="terno-2">
-              <span class="visor-label">3ª Dezena</span>
-              <span class="visor-valor" id="disp-terno-2">--</span>
+
+            <div class="wa-previa">
+              <span>Cotação: <strong id="venda-mult">6000x</strong></span>
+              <span>Retorno est.: <strong id="venda-retorno">R$ 0,00</strong></span>
+            </div>
+
+            <div class="numpad" data-teclado="vendas">
+              <button type="button" class="tecla" data-digito="1">1</button>
+              <button type="button" class="tecla" data-digito="2">2</button>
+              <button type="button" class="tecla" data-digito="3">3</button>
+              <button type="button" class="tecla" data-digito="4">4</button>
+              <button type="button" class="tecla" data-digito="5">5</button>
+              <button type="button" class="tecla" data-digito="6">6</button>
+              <button type="button" class="tecla" data-digito="7">7</button>
+              <button type="button" class="tecla" data-digito="8">8</button>
+              <button type="button" class="tecla" data-digito="9">9</button>
+              <button type="button" class="tecla tecla-acao" data-acao="limpar">Limpar</button>
+              <button type="button" class="tecla" data-digito="0">0</button>
+              <button type="button" class="tecla tecla-acao" data-acao="apagar">⌫</button>
+            </div>
+
+            <button type="submit" class="btn-wa-enviar">Enviar Registro</button>
+          </form>
+
+          <p id="feedback-msg" class="feedback"></p>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-historico-topo">
+            <div class="wa-card-titulo">Histórico de Vendas</div>
+            <input type="text" id="filtro-vendas" placeholder="Buscar código, número ou origem..." />
+          </div>
+          <div id="lista-vendas" class="lista-vendas"></div>
+        </div>
+      </section>
+
+      <!-- ABA 2: SIMULADOR DE COTAÇÕES -->
+      <section id="aba-simulador" class="aba-conteudo oculto">
+        <div class="wa-card">
+          <div class="wa-card-titulo">Simulador de Cotações</div>
+
+          <div class="campo">
+            <label for="sim-modalidade">Modalidade</label>
+            <select id="sim-modalidade">
+              <option value="M">Milhar (M) — 6000x</option>
+              <option value="C">Centena (C) — 600x</option>
+              <option value="DZ">Dezena (DZ) — 50x</option>
+              <option value="U">Unidade (U) — 5x</option>
+              <option value="G">Grupo (G) — 15x</option>
+              <option value="DG">Dupla de Grupo (DG) — 16x</option>
+              <option value="TG">Terno de Grupo (TG) — 100x</option>
+              <option value="PAS">Passe (PAS) — 75x</option>
+              <option value="DDZ">Duque de Dezena (DDZ) — 200x</option>
+              <option value="TDZ">Terno de Dezena (TDZ) — 6000x</option>
+            </select>
+          </div>
+
+          <div class="visor-box ativo" data-alvo="sim-valor">
+            <span class="visor-label">Valor Base</span>
+            <span class="visor-valor" id="sim-disp-valor">R$ 0,00</span>
+          </div>
+
+          <div class="wa-sim-box">
+            <div class="sim-linha">
+              <span>Modalidade:</span>
+              <strong id="sim-codigo">M (Milhar)</strong>
+            </div>
+            <div class="sim-linha">
+              <span>Multiplicador:</span>
+              <strong id="sim-mult">6000x</strong>
+            </div>
+            <div class="sim-linha sim-total">
+              <span>Retorno Simulado:</span>
+              <strong id="sim-retorno">R$ 0,00</strong>
             </div>
           </div>
-        </div>
 
-        <!-- Campo Valor (em centavos via teclado numérico próprio) -->
-        <div class="bloco-alvo">
-          <div class="visor-box" data-alvo="valor">
-            <span class="visor-label">Valor (mín. R$ 0,01)</span>
-            <span class="visor-valor" id="disp-valor">R$ 0,00</span>
+          <div class="numpad" data-teclado="simulador">
+            <button type="button" class="tecla" data-digito="1">1</button>
+            <button type="button" class="tecla" data-digito="2">2</button>
+            <button type="button" class="tecla" data-digito="3">3</button>
+            <button type="button" class="tecla" data-digito="4">4</button>
+            <button type="button" class="tecla" data-digito="5">5</button>
+            <button type="button" class="tecla" data-digito="6">6</button>
+            <button type="button" class="tecla" data-digito="7">7</button>
+            <button type="button" class="tecla" data-digito="8">8</button>
+            <button type="button" class="tecla" data-digito="9">9</button>
+            <button type="button" class="tecla tecla-acao" data-acao="limpar">Limpar</button>
+            <button type="button" class="tecla" data-digito="0">0</button>
+            <button type="button" class="tecla tecla-acao" data-acao="apagar">⌫</button>
           </div>
+
+          <button type="button" id="btn-usar-simulacao" class="btn-wa-sec">
+            Usar Simulação em Vendas
+          </button>
         </div>
-
-        <!-- Teclado Numérico Próprio -->
-        <div class="numpad" id="numpad">
-          <button type="button" class="tecla" data-digito="1">1</button>
-          <button type="button" class="tecla" data-digito="2">2</button>
-          <button type="button" class="tecla" data-digito="3">3</button>
-          <button type="button" class="tecla" data-digito="4">4</button>
-          <button type="button" class="tecla" data-digito="5">5</button>
-          <button type="button" class="tecla" data-digito="6">6</button>
-          <button type="button" class="tecla" data-digito="7">7</button>
-          <button type="button" class="tecla" data-digito="8">8</button>
-          <button type="button" class="tecla" data-digito="9">9</button>
-          <button type="button" class="tecla tecla-acao" data-acao="limpar">Limpar</button>
-          <button type="button" class="tecla" data-digito="0">0</button>
-          <button type="button" class="tecla tecla-acao" data-acao="apagar">⌫</button>
-        </div>
-
-        <button type="submit" class="btn-primario">Confirmar Venda</button>
-      </form>
-
-      <p id="feedback-msg" class="feedback"></p>
-    </section>
-
-    <section class="card">
-      <div class="card-header">
-        <h2>Histórico de Vendas (BD JSON)</h2>
-        <input type="text" id="filtro-vendas" placeholder="Filtrar por modalidade, dezena ou chave..." />
-      </div>
-      <div id="lista-vendas" class="lista-vendas"></div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <script src="app.js"></script>
