@@ -12,6 +12,19 @@ const VENDAS_PATH = path.join(DATA_DIR, 'vendas.json');
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const COTACOES = {
+  M: { nome: 'Milhar', codigo: 'M', multiplicador: 6000, qtd: 1, tipo: 'milhar' },
+  C: { nome: 'Centena', codigo: 'C', multiplicador: 600, qtd: 1, tipo: 'centena' },
+  DZ: { nome: 'Dezena', codigo: 'DZ', multiplicador: 50, qtd: 1, tipo: 'dezena' },
+  U: { nome: 'Unidade', codigo: 'U', multiplicador: 5, qtd: 1, tipo: 'unidade' },
+  G: { nome: 'Grupo', codigo: 'G', multiplicador: 15, qtd: 1, tipo: 'grupo' },
+  DG: { nome: 'Dupla de Grupo', codigo: 'DG', multiplicador: 16, qtd: 2, tipo: 'grupo' },
+  TG: { nome: 'Terno de Grupo', codigo: 'TG', multiplicador: 100, qtd: 3, tipo: 'grupo' },
+  PAS: { nome: 'Passe', codigo: 'PAS', multiplicador: 75, qtd: 2, tipo: 'grupo' },
+  DDZ: { nome: 'Duque de Dezena', codigo: 'DDZ', multiplicador: 200, qtd: 2, tipo: 'dezena' },
+  TDZ: { nome: 'Terno de Dezena', codigo: 'TDZ', multiplicador: 6000, qtd: 3, tipo: 'dezena' }
+};
+
 function gerarTodasDezenas() {
   const lista = [];
   for (let i = 1; i <= 99; i++) {
@@ -38,10 +51,11 @@ function gerarCatalogoPadrao() {
   }
 
   return {
+    app: '99 da sorte',
     regras: {
       estoqueIlimitado: true,
       valorMinimo: 0.01,
-      modalidades: ['grupo', 'dezena', 'terno_dezena']
+      cotacoes: COTACOES
     },
     produtos
   };
@@ -71,6 +85,36 @@ inicializarBancoJSON();
 
 const GRUPOS_VALIDOS = new Set(Array.from({ length: 25 }, (_, i) => String(i + 1).padStart(2, '0')));
 const DEZENAS_VALIDAS = new Set(gerarTodasDezenas());
+const UNIDADES_VALIDAS = new Set(Array.from({ length: 10 }, (_, i) => String(i)));
+
+function validarItem(item, tipo) {
+  const limpo = String(item || '').trim();
+  if (tipo === 'grupo') {
+    const g = limpo.padStart(2, '0');
+    if (!GRUPOS_VALIDOS.has(g)) return { erro: `Grupo inválido: "${limpo}". Use 01 a 25.` };
+    return { valor: g, ordem: Number(g) };
+  }
+  if (tipo === 'dezena') {
+    const d = limpo.padStart(2, '0');
+    if (!DEZENAS_VALIDAS.has(d)) return { erro: `Dezena inválida: "${limpo}". Use 01 a 99 ou 00.` };
+    return { valor: d, ordem: d === '00' ? 100 : Number(d) };
+  }
+  if (tipo === 'centena') {
+    const c = limpo.padStart(3, '0');
+    if (!/^\d{3}$/.test(c)) return { erro: `Centena inválida: "${limpo}". Use 3 dígitos (ex: 045).` };
+    return { valor: c, ordem: Number(c) };
+  }
+  if (tipo === 'milhar') {
+    const m = limpo.padStart(4, '0');
+    if (!/^\d{4}$/.test(m)) return { erro: `Milhar inválida: "${limpo}". Use 4 dígitos (ex: 0125).` };
+    return { valor: m, ordem: Number(m) };
+  }
+  if (tipo === 'unidade') {
+    if (!UNIDADES_VALIDAS.has(limpo)) return { erro: `Unidade inválida: "${limpo}". Use 0 a 9.` };
+    return { valor: limpo, ordem: Number(limpo) };
+  }
+  return { erro: 'Tipo de item desconhecido.' };
+}
 
 app.get('/api/catalogo', (req, res) => {
   try {
@@ -85,9 +129,11 @@ app.get('/api/vendas', (req, res) => {
   try {
     const vendas = lerJSON(VENDAS_PATH);
     const totalArrecadado = vendas.reduce((acc, v) => acc + v.valor, 0);
+    const retornoPotencialTotal = vendas.reduce((acc, v) => acc + (v.retornoPotencial || 0), 0);
     res.json({
       totalRegistros: vendas.length,
       totalArrecadado: Number(totalArrecadado.toFixed(2)),
+      retornoPotencialTotal: Number(retornoPotencialTotal.toFixed(2)),
       vendas
     });
   } catch (err) {
@@ -96,59 +142,53 @@ app.get('/api/vendas', (req, res) => {
 });
 
 app.post('/api/vendas', (req, res) => {
-  const { modalidade, selecao, valor } = req.body;
+  const { modalidade, selecao, valor, origem } = req.body;
+
+  const cfg = COTACOES[modalidade];
+  if (!cfg) {
+    return res.status(400).json({ erro: 'Modalidade inválida.' });
+  }
 
   const valorNumerico = Number(valor);
   if (isNaN(valorNumerico) || valorNumerico < 0.01) {
     return res.status(400).json({ erro: 'O valor da venda deve ser maior ou igual a 0,01.' });
   }
 
-  const valorFormatado = Number(valorNumerico.toFixed(2));
-  let selecaoFinal = null;
-  let chaveNormalizada = '';
-
-  if (modalidade === 'grupo') {
-    const g = String(selecao || '').trim().padStart(2, '0');
-    if (!GRUPOS_VALIDOS.has(g)) {
-      return res.status(400).json({ erro: 'Grupo inválido. Escolha entre 01 e 25.' });
-    }
-    selecaoFinal = g;
-    chaveNormalizada = `G-${g}`;
-  } else if (modalidade === 'dezena') {
-    const d = String(selecao || '').trim().padStart(2, '0');
-    if (!DEZENAS_VALIDAS.has(d)) {
-      return res.status(400).json({ erro: 'Dezena inválida. Escolha entre 01 e 99, ou 00.' });
-    }
-    selecaoFinal = d;
-    chaveNormalizada = `D-${d}`;
-  } else if (modalidade === 'terno_dezena') {
-    if (!Array.isArray(selecao) || selecao.length !== 3) {
-      return res.status(400).json({ erro: 'O terno de dezena exige exatamente 3 dezenas.' });
-    }
-    const dezenasNormalizadas = selecao.map(item => String(item || '').trim().padStart(2, '0'));
-    for (const d of dezenasNormalizadas) {
-      if (!DEZENAS_VALIDAS.has(d)) {
-        return res.status(400).json({ erro: `Dezena inválida no terno: "${d}". Use 01 a 99 ou 00.` });
-      }
-    }
-    selecaoFinal = dezenasNormalizadas;
-    const ordenadas = [...dezenasNormalizadas].sort((a, b) => {
-      const valA = a === '00' ? 100 : Number(a);
-      const valB = b === '00' ? 100 : Number(b);
-      return valA - valB;
+  const listaBruta = Array.isArray(selecao) ? selecao : [selecao];
+  if (listaBruta.length !== cfg.qtd) {
+    return res.status(400).json({
+      erro: `${cfg.nome} (${cfg.codigo}) exige exatamente ${cfg.qtd} ${cfg.tipo}(s).`
     });
-    chaveNormalizada = `T-${ordenadas.join('-')}`;
-  } else {
-    return res.status(400).json({ erro: 'Modalidade inválida. Use: grupo, dezena ou terno_dezena.' });
   }
+
+  const validados = [];
+  for (const raw of listaBruta) {
+    const resItem = validarItem(raw, cfg.tipo);
+    if (resItem.erro) {
+      return res.status(400).json({ erro: resItem.erro });
+    }
+    validados.push(resItem);
+  }
+
+  const selecaoFinal = cfg.qtd === 1 ? validados[0].valor : validados.map(v => v.valor);
+  const ordenados = [...validados].sort((a, b) => a.ordem - b.ordem).map(v => v.valor);
+  const chaveNormalizada = `${cfg.codigo}-${ordenados.join('-')}`;
+
+  const valorFormatado = Number(valorNumerico.toFixed(2));
+  const retornoPotencial = Number((valorFormatado * cfg.multiplicador).toFixed(2));
+  const origemLimpa = origem === 'landing' ? 'landing' : 'presencial';
 
   const novaVenda = {
     id: `VND-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     dataHora: new Date().toISOString(),
-    modalidade,
+    origem: origemLimpa,
+    modalidade: cfg.codigo,
+    nomeModalidade: cfg.nome,
+    multiplicador: cfg.multiplicador,
     selecao: selecaoFinal,
     chaveNormalizada,
-    valor: valorFormatado
+    valor: valorFormatado,
+    retornoPotencial
   };
 
   const vendas = lerJSON(VENDAS_PATH);
@@ -172,5 +212,5 @@ app.delete('/api/vendas/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor a correr em http://localhost:${PORT}`);
+  console.log(`99 da sorte rodando em http://localhost:${PORT}`);
 });
