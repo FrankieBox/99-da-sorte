@@ -138,10 +138,10 @@ body {
 }
 
 .wa-card-titulo {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--wa-header);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .wa-historico-topo {
@@ -157,10 +157,11 @@ body {
   margin-bottom: 0;
 }
 
-.linha-dupla {
+.linha-dupla-ajustada {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
   gap: 10px;
+  align-items: start;
 }
 
 .campo {
@@ -168,6 +169,7 @@ body {
   flex-direction: column;
   gap: 5px;
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .campo label {
@@ -176,16 +178,23 @@ body {
   color: var(--wa-mutado);
 }
 
-select, #filtro-vendas {
-  padding: 10px 12px;
+select,
+input[type="text"],
+#filtro-vendas {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 10px;
   border: 1px solid #ced6db;
   border-radius: 8px;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   background: #ffffff;
   color: var(--wa-texto);
 }
 
-select:focus, #filtro-vendas:focus {
+select:focus,
+input[type="text"]:focus,
+#filtro-vendas:focus {
   outline: none;
   border-color: var(--wa-verde);
 }
@@ -445,4 +454,31 @@ select:focus, #filtro-vendas:focus {
   cursor: pointer;
   font-size: 0.74rem;
   font-weight: 700;
+}
+
+.lp-subtitulo {
+  font-size: 0.88rem;
+  color: var(--wa-mutado);
+  margin-bottom: 10px;
+}
+
+.lp-texto {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.lp-regra-box {
+  background: #f0f2f5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lp-meta {
+  font-size: 0.78rem;
+  color: var(--wa-mutado);
 }
