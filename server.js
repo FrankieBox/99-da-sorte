@@ -11,7 +11,6 @@ app.use(express.json());
 const RAIZ = __dirname;
 const PUBLIC_DIR = path.join(RAIZ, 'public');
 
-// Serve arquivos estáticos de public/ e, se houver, da raiz
 if (fs.existsSync(PUBLIC_DIR)) {
   app.use(express.static(PUBLIC_DIR));
 }
@@ -34,6 +33,29 @@ const HORARIOS_PADRAO = [
   { id: '2010', numero: '07', horario: '20:10', premio: 'R$ 400,00', valor: 2.50 },
   { id: '2210', numero: '08', horario: '22:10', premio: 'R$ 500,00', valor: 2.50 }
 ];
+
+function lerAgentesConfig() {
+  const caminhos = [
+    path.join(PUBLIC_DIR, 'agentes.json'),
+    path.join(DATA_DIR, 'agentes.json'),
+    path.join(RAIZ, 'agentes.json')
+  ];
+  for (const caminho of caminhos) {
+    if (fs.existsSync(caminho)) {
+      try {
+        return JSON.parse(fs.readFileSync(caminho, 'utf8'));
+      } catch (e) {
+        console.error('Erro ao ler agentes.json:', e);
+      }
+    }
+  }
+  return {
+    ativoGlobal: true,
+    intervaloMinSegundos: 8,
+    intervaloMaxSegundos: 16,
+    agentes: []
+  };
+}
 
 function lerDB() {
   if (!fs.existsSync(DB_FILE)) {
@@ -124,6 +146,7 @@ app.get('/adm.html', (req, res) => {
 
 app.get('/api/estado', (req, res) => {
   const db = lerDB();
+  const agentesConfig = lerAgentesConfig();
   const ultimosPublicos = db.bilhetes
     .slice(-15)
     .reverse()
@@ -143,7 +166,8 @@ app.get('/api/estado', (req, res) => {
   res.json({
     dataReferencia: db.dataReferencia,
     concursos: db.concursos,
-    atividadeRecente: ultimosPublicos
+    atividadeRecente: ultimosPublicos,
+    agentesConfig
   });
 });
 
