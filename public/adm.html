@@ -174,6 +174,11 @@
       clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
     }
 
+    .btn-lime:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
     .btn-outline {
       background: rgba(56, 189, 248, 0.1);
       border: 1px solid var(--cyan-neon);
@@ -311,7 +316,6 @@
       <span class="status-pill" id="adm-status-pill">CONECTADO</span>
     </header>
 
-    <!-- 1. CHAVE + PUBLICAÇÃO RÁPIDA DE RESULTADO -->
     <section class="adm-section">
       <span class="sec-tag">// LANÇAMENTO OFICIAL (CORCEL BRANCO → 99 DA SORTE)</span>
       <div class="sec-head">
@@ -354,13 +358,14 @@
           />
         </div>
 
-        <button type="submit" class="btn-lime">SALVAR RESULTADO &amp; CONFERIR BILHETES ➔</button>
+        <button type="submit" id="btn-salvar-resultado" class="btn-lime">
+          SALVAR RESULTADO &amp; CONFERIR BILHETES ➔
+        </button>
       </form>
 
       <p id="adm-feedback" class="feedback"></p>
     </section>
 
-    <!-- 2. POSSÍVEIS GANHADORES DO ÚLTIMO LANÇAMENTO -->
     <section class="adm-section">
       <span class="sec-tag">// CONFERÊNCIA AUTOMÁTICA</span>
       <div class="sec-head">
@@ -371,7 +376,6 @@
       </div>
     </section>
 
-    <!-- 3. PAINEL DOS 15 RESULTADOS DO DIA -->
     <section class="adm-section">
       <span class="sec-tag">// GRADE DIÁRIA (TOQUE PARA SELECIONAR O HORÁRIO)</span>
       <div class="sec-head">
@@ -381,7 +385,6 @@
       <div id="grid-resultados-dia" class="horarios-grid"></div>
     </section>
 
-    <!-- 4. CONTROLE DO TIME DE AGENTES DE AQUECIMENTO -->
     <section class="adm-section">
       <span class="sec-tag">// PROVA SOCIAL NO MODAL</span>
       <div class="sec-head">
@@ -415,6 +418,7 @@
     const horarioEl = document.getElementById('adm-horario');
     const dezenaEl = document.getElementById('adm-dezena');
     const formEl = document.getElementById('form-publicar-resultado');
+    const btnSalvarEl = document.getElementById('btn-salvar-resultado');
     const feedbackEl = document.getElementById('adm-feedback');
     const listaGanhadoresEl = document.getElementById('lista-ganhadores');
     const gridDiaEl = document.getElementById('grid-resultados-dia');
@@ -425,6 +429,11 @@
     const btnToggleAgentesEl = document.getElementById('btn-toggle-agentes');
 
     let agentesAtivos = true;
+
+    function normalizarHorario(valor) {
+      const match = String(valor || '').match(/(\d{2}:\d{2})/);
+      return match ? match[1] : String(valor || '').trim();
+    }
 
     function inicializarFormulario() {
       const hoje = new Date().toISOString().slice(0, 10);
@@ -444,40 +453,47 @@
     }
 
     async function carregarPainelDia() {
-      const dataSelecionada = dataEl.value;
-      const res = await fetch(`/api/resultados?data=${encodeURIComponent(dataSelecionada)}`);
-      if (!res.ok) return;
-      const payload = await res.json();
+      try {
+        const dataSelecionada = dataEl.value;
+        const res = await fetch(`/api/resultados?data=${encodeURIComponent(dataSelecionada)}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const payload = await res.json();
 
-      const mapaDia = {};
-      for (const r of payload.resultados || []) {
-        mapaDia[r.horario] = r;
-      }
+        const mapaDia = {};
+        for (const r of payload.resultados || []) {
+          const hNorm = normalizarHorario(r.horario);
+          if (hNorm) mapaDia[hNorm] = r;
+        }
 
-      const publicadosCount = Object.keys(mapaDia).length;
-      contadorPubEl.textContent = `${publicadosCount} / ${HORARIOS_CONCURSOS.length} PUBLICADOS`;
+        const publicadosCount = Object.keys(mapaDia).length;
+        contadorPubEl.textContent = `${publicadosCount} / ${HORARIOS_CONCURSOS.length} PUBLICADOS`;
 
-      gridDiaEl.innerHTML = HORARIOS_CONCURSOS.map(h => {
-        const item = mapaDia[h];
-        return `
-          <div class="horario-tile ${item ? 'publicado' : ''}" data-h="${h}">
-            <div class="tile-top">
-              <span>${h}</span>
-              <span>${item ? '✓' : '•'}</span>
+        gridDiaEl.innerHTML = HORARIOS_CONCURSOS.map(h => {
+          const item = mapaDia[h];
+          return `
+            <div class="horario-tile ${item ? 'publicado' : ''}" data-h="${h}">
+              <div class="tile-top">
+                <span>${h}</span>
+                <span>${item ? '✓' : '•'}</span>
+              </div>
+              <div class="tile-status">
+                ${item ? `DZ ${item.dezena} (G${item.grupo})` : 'Aguardando'}
+              </div>
             </div>
-            <div class="tile-status">
-              ${item ? `DZ ${item.dezena} (G${item.grupo})` : 'Aguardando'}
-            </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
 
-      gridDiaEl.querySelectorAll('.horario-tile').forEach(tile => {
-        tile.addEventListener('click', () => {
-          horarioEl.value = tile.dataset.h;
-          dezenaEl.focus();
+        gridDiaEl.querySelectorAll('.horario-tile').forEach(tile => {
+          tile.addEventListener('click', () => {
+            horarioEl.value = tile.dataset.h;
+            dezenaEl.focus();
+          });
         });
-      });
+      } catch (err) {
+        mostrarFeedback('Não foi possível atualizar a grade do dia. Verifique se o servidor está online.', true);
+      }
     }
 
     function renderizarGanhadores(lista, resultado) {
@@ -508,14 +524,18 @@
     }
 
     async function carregarAgentesStatus() {
-      const res = await fetch('/api/agentes');
-      if (!res.ok) return;
-      const cfg = await res.json();
-      agentesAtivos = Boolean(cfg.ativoGlobal);
-      const qtd = Array.isArray(cfg.agentes) ? cfg.agentes.length : 0;
-      statusAgentesEl.textContent = agentesAtivos ? '● ATIVO NO MODAL' : '○ PAUSADO';
-      statusAgentesEl.style.color = agentesAtivos ? '#b8ff00' : '#94a3b8';
-      detalheAgentesEl.textContent = `${qtd} perfis • intervalo ${cfg.intervaloMinSegundos || 8}s–${cfg.intervaloMaxSegundos || 16}s`;
+      try {
+        const res = await fetch('/api/agentes');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        agentesAtivos = Boolean(cfg.ativoGlobal);
+        const qtd = Array.isArray(cfg.agentes) ? cfg.agentes.length : 0;
+        statusAgentesEl.textContent = agentesAtivos ? '● ATIVO NO MODAL' : '○ PAUSADO';
+        statusAgentesEl.style.color = agentesAtivos ? '#b8ff00' : '#94a3b8';
+        detalheAgentesEl.textContent = `${qtd} perfis • intervalo ${cfg.intervaloMinSegundos || 8}s–${cfg.intervaloMaxSegundos || 16}s`;
+      } catch (err) {
+        // Ignora falha pontual na leitura dos agentes
+      }
     }
 
     btnToggleAgentesEl.addEventListener('click', async () => {
@@ -527,25 +547,29 @@
       }
       localStorage.setItem('99_adm_key', chave);
 
-      const res = await fetch('/api/agentes/toggle', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': chave
-        },
-        body: JSON.stringify({ ativoGlobal: !agentesAtivos })
-      });
+      try {
+        const res = await fetch('/api/agentes/toggle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': chave
+          },
+          body: JSON.stringify({ ativoGlobal: !agentesAtivos })
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        mostrarFeedback(data.erro || 'Não foi possível alterar os agentes.', true);
-        return;
+        const data = await res.json();
+        if (!res.ok) {
+          mostrarFeedback(data.erro || 'Não foi possível alterar os agentes.', true);
+          return;
+        }
+
+        mostrarFeedback(
+          data.ativoGlobal ? 'Agentes de aquecimento ativados!' : 'Agentes de aquecimento pausados!'
+        );
+        await carregarAgentesStatus();
+      } catch (err) {
+        mostrarFeedback('Falha de comunicação ao alternar agentes.', true);
       }
-
-      mostrarFeedback(
-        data.ativoGlobal ? 'Agentes de aquecimento ativados!' : 'Agentes de aquecimento pausados!'
-      );
-      await carregarAgentesStatus();
     });
 
     formEl.addEventListener('submit', async e => {
@@ -553,33 +577,47 @@
       const chave = chaveEl.value.trim();
       localStorage.setItem('99_adm_key', chave);
 
+      btnSalvarEl.disabled = true;
       mostrarFeedback('Publicando resultado...');
 
-      const res = await fetch('/api/resultados', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': chave
-        },
-        body: JSON.stringify({
-          dataCiclo: dataEl.value,
-          horario: horarioEl.value,
-          dezena: dezenaEl.value.trim()
-        })
-      });
+      try {
+        const res = await fetch('/api/resultados', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': chave
+          },
+          body: JSON.stringify({
+            dataCiclo: dataEl.value,
+            horario: normalizarHorario(horarioEl.value),
+            dezena: dezenaEl.value.trim()
+          })
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        mostrarFeedback(data.erro || 'Erro ao publicar resultado.', true);
-        return;
+        const textoBruto = await res.text();
+        let data = {};
+        try {
+          data = textoBruto ? JSON.parse(textoBruto) : {};
+        } catch (_) {
+          throw new Error('Resposta inválida do servidor.');
+        }
+
+        if (!res.ok) {
+          mostrarFeedback(data.erro || `Erro ao publicar resultado (HTTP ${res.status}).`, true);
+          return;
+        }
+
+        mostrarFeedback(
+          `Resultado publicado: ${data.resultado.horario} → Dezena ${data.resultado.dezena} (Grupo ${data.resultado.grupo})`
+        );
+        dezenaEl.value = '';
+        renderizarGanhadores(data.possiveisGanhadores, data.resultado);
+        await carregarPainelDia();
+      } catch (err) {
+        mostrarFeedback(err.message || 'Falha de rede ao publicar resultado.', true);
+      } finally {
+        btnSalvarEl.disabled = false;
       }
-
-      mostrarFeedback(
-        `Resultado publicado: ${data.resultado.horario} → Dezena ${data.resultado.dezena} (Grupo ${data.resultado.grupo})`
-      );
-      dezenaEl.value = '';
-      renderizarGanhadores(data.possiveisGanhadores, data.resultado);
-      await carregarPainelDia();
     });
 
     dataEl.addEventListener('change', carregarPainelDia);
