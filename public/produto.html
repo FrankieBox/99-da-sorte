@@ -14,7 +14,7 @@
         <div class="wa-avatar">99</div>
         <div>
           <div class="wa-title">99 da sorte</div>
-          <div class="wa-status">● participação online • Dezena (DZ)</div>
+          <div class="wa-status">● concurso oficial • Dezena (DZ)</div>
         </div>
       </div>
       <div class="wa-metrics">
@@ -27,18 +27,72 @@
     <div class="wa-container">
       <section id="status-retorno" class="wa-card oculto"></section>
 
-      <!-- COPY E OFERTA DO PRODUTO -->
-      <section class="wa-card lp-hero">
-        <span class="lp-badge">PRÊMIO: GIFT CARD PIX R$ 50,00</span>
-        <div class="wa-card-titulo" id="lp-titulo">Gift Card Pix de R$ 50,00 — Escolha sua Dezena da Sorte</div>
-        <p class="lp-subtitulo" id="lp-subtitulo">
-          Participe por apenas R$ 2,50 e concorra a R$ 50,00 via Pix com transparência total.
+      <!-- HERO DE ALTA CONVERSÃO -->
+      <section class="lp-banner-hero">
+        <div class="lp-banner-topo">
+          <span class="lp-pill-destaque">PIX DIRETO NA CONTA • 1 EM 100</span>
+          <span class="lp-pill-cota" id="lp-badge-mod">DZ • 100 Números</span>
+        </div>
+
+        <h1 class="lp-hero-titulo" id="lp-titulo">
+          Transforme R$ 2,50 em R$ 50,00 no Pix!
+        </h1>
+        <p class="lp-hero-sub" id="lp-subtitulo">
+          Escolha sua dezena da sorte (de 01 a 00), preencha seu WhatsApp e concorra ao Gift Card Pix de R$ 50,00 sem complicação.
         </p>
 
+        <div class="lp-placar-oferta">
+          <div class="lp-placar-item">
+            <span>Você investe</span>
+            <strong id="lp-placar-custo">R$ 2,50</strong>
+          </div>
+          <div class="lp-placar-seta">➔</div>
+          <div class="lp-placar-item destaque">
+            <span>Prêmio no Pix</span>
+            <strong id="lp-placar-premio">R$ 50,00</strong>
+          </div>
+        </div>
+
+        <div id="lp-criativo-box" class="lp-criativo-box oculto">
+          <img id="lp-criativo-img" src="" alt="Banner da campanha" />
+        </div>
+
+        <a href="#bloco-escolha" class="lp-btn-ancora" id="lp-btn-topo">
+          Escolher Minha Dezena Agora ↓
+        </a>
+      </section>
+
+      <!-- COPY PERSUASIVA & PASSO A PASSO -->
+      <section class="wa-card">
+        <div class="wa-card-titulo">Por que participar agora?</div>
         <div id="lp-copy-blocos" class="lp-copy-lista"></div>
 
+        <div class="lp-passos">
+          <div class="lp-passo">
+            <span class="lp-passo-num">1</span>
+            <div>
+              <strong>Escolha sua dezena</strong>
+              <p>Toque em qualquer número de 01 a 99 ou 00, ou use a Surpresinha.</p>
+            </div>
+          </div>
+          <div class="lp-passo">
+            <span class="lp-passo-num">2</span>
+            <div>
+              <strong>Deixe seu WhatsApp</strong>
+              <p>É por lá que avisamos e enviamos o Pix se você ganhar.</p>
+            </div>
+          </div>
+          <div class="lp-passo">
+            <span class="lp-passo-num">3</span>
+            <div>
+              <strong>Conclua seu bilhete</strong>
+              <p>Pagamento rápido para validar sua participação no sorteio.</p>
+            </div>
+          </div>
+        </div>
+
         <div class="lp-regra-box">
-          <strong>Como concorrer:</strong>
+          <strong>Regra oficial do concurso:</strong>
           <p id="lp-regra"></p>
           <span class="lp-meta">
             Modalidade: <strong id="lp-modalidade-label">DZ (Dezena)</strong> • Chance base: <strong id="lp-chance-label">1 em 100</strong>
@@ -47,11 +101,16 @@
       </section>
 
       <!-- ESCOLHA DO BILHETE + LEAD + CHECKOUT -->
-      <section class="wa-card">
-        <div class="wa-card-titulo" id="lp-cta-titulo">Garanta sua Dezena por R$ 2,50</div>
-        <p class="lp-subtitulo">
-          Toque em uma dezena da grade ou digite no teclado abaixo, preencha seus dados e siga para o pagamento.
-        </p>
+      <section id="bloco-escolha" class="wa-card">
+        <div class="lp-escolha-topo">
+          <div>
+            <div class="wa-card-titulo" id="lp-cta-titulo">Garanta sua Dezena por R$ 2,50</div>
+            <p class="lp-subtitulo">Selecione na grade, digite no teclado ou clique na Surpresinha.</p>
+          </div>
+          <button type="button" id="btn-surpresinha" class="btn-surpresinha">
+            🎲 Surpresinha
+          </button>
+        </div>
 
         <form id="form-landing">
           <div id="lp-visores-selecao" class="bloco-alvo"></div>
@@ -74,18 +133,22 @@
           </div>
 
           <div class="campo">
-            <label for="lead-nome">Seu Nome</label>
-            <input type="text" id="lead-nome" placeholder="Nome completo" required />
+            <label for="lead-nome">Seu Nome Completo</label>
+            <input type="text" id="lead-nome" placeholder="Ex.: João da Silva" required />
           </div>
 
           <div class="campo">
-            <label for="lead-contato">WhatsApp / Contato (para falar com você se ganhar)</label>
+            <label for="lead-contato">WhatsApp com DDD (para envio do prêmio se ganhar)</label>
             <input type="text" id="lead-contato" placeholder="(11) 99999-9999" required />
           </div>
 
           <button type="submit" id="btn-lp-submit" class="btn-wa-enviar">
-            Garantir Dezena por R$ 2,50
+            Garantir Minha Dezena por R$ 2,50
           </button>
+
+          <p class="lp-garantia-texto">
+            🔒 Seus dados são usados exclusivamente para identificação do bilhete e contato em caso de premiação.
+          </p>
         </form>
 
         <p id="lp-feedback" class="feedback"></p>
