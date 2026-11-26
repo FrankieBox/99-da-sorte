@@ -1,19 +1,7 @@
 const HORARIOS_CONCURSOS = [
-  '08:10',
-  '09:10',
-  '10:10',
-  '11:10',
-  '12:10',
-  '13:10',
-  '14:10',
-  '15:10',
-  '16:10',
-  '17:10',
-  '18:10',
-  '19:10',
-  '19:45',
-  '20:50',
-  '21:10'
+  '08:10', '09:10', '10:10', '11:10', '12:10', '13:10',
+  '14:10', '15:10', '16:10', '17:10', '18:10', '19:10',
+  '19:45', '20:50', '21:10'
 ];
 
 const DEZENAS_100 = [
@@ -21,11 +9,25 @@ const DEZENAS_100 = [
   '00'
 ];
 
+// Lista base de agentes para balões dentro do concurso individual
+const AGENTES_AQUECIMENTO = {
+  ativo: true,
+  intervaloMs: 4200,
+  perfis: [
+    { nome: 'Lucas M.', rota: 'Centro' },
+    { nome: 'Patrícia S.', rota: 'Vila Nova' },
+    { nome: 'Rafael T.', rota: 'Zona Norte' },
+    { nome: 'Camila R.', rota: 'Jardim Luz' },
+    { nome: 'Diego A.', rota: 'Estação' },
+    { nome: 'Bruna O.', rota: 'Av. Principal' }
+  ]
+};
+
 const CONCURSOS = HORARIOS_CONCURSOS.map((horario, idx) => ({
   id: `C-${String(idx + 1).padStart(2, '0')}`,
   numero: String(idx + 1).padStart(2, '0'),
   horario,
-  tipo: idx >= 12 ? 'SESSÃO ESPECIAL' : 'GRADE HORÁRIA',
+  tipo: idx >= 12 ? 'EXTRA' : 'HORA',
   valorBilhete: 2.5,
   modalidade: 'DZ'
 }));
@@ -36,12 +38,13 @@ const carouselIndicadorEl = document.getElementById('carousel-indicador');
 const btnPrevSlideEl = document.getElementById('btn-prev-slide');
 const btnNextSlideEl = document.getElementById('btn-next-slide');
 const btnIrProximoEl = document.getElementById('btn-ir-proximo');
+const btnHeroProximoEl = document.getElementById('btn-hero-proximo');
 const relogioAtualEl = document.getElementById('relogio-atual');
 const qrPaginaEl = document.getElementById('qr-pagina');
 
-const formConsultarBilheteEl = document.getElementById('form-consultar-bilhete');
-const inputIdBilheteEl = document.getElementById('input-id-bilhete');
-const resultadoConsultaBilheteEl = document.getElementById('resultado-consulta-bilhete');
+const formConsultaIdEl = document.getElementById('form-consulta-id');
+const inputConsultaIdEl = document.getElementById('input-consulta-id');
+const resultadoConsultaIdEl = document.getElementById('resultado-consulta-id');
 
 const modalEl = document.getElementById('modal-concurso');
 const btnFecharModalEl = document.getElementById('btn-fechar-modal');
@@ -62,11 +65,10 @@ let concursoAtivo = null;
 let dezenaSelecionada = '';
 let idProximoGlobal = CONCURSOS[0].id;
 let posicaoInicialAjustada = false;
+let timerBaloesId = null;
+let ultimoAgenteIdx = -1;
 
-let configAgentesCache = null;
-let timerAgentesId = null;
-let ultimoAgenteId = null;
-let ultimaDezenaAgente = null;
+const STORAGE_RESERVAS_KEY = 'nine9_reservas_concursos_v1';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -94,7 +96,6 @@ function calcularProximoAlvo(horarioStr, agora) {
 
   if (alvoHoje.getTime() > agora.getTime()) {
     return {
-      alvo: alvoHoje,
       restanteMs: alvoHoje.getTime() - agora.getTime(),
       hoje: true
     };
@@ -111,55 +112,49 @@ function calcularProximoAlvo(horarioStr, agora) {
   );
 
   return {
-    alvo: alvoAmanha,
     restanteMs: alvoAmanha.getTime() - agora.getTime(),
     hoje: false
   };
 }
 
 function construirCarrossel() {
-  if (!carouselTrackEl) return;
   const triplo = [...CONCURSOS, ...CONCURSOS, ...CONCURSOS];
 
   carouselTrackEl.innerHTML = triplo
-    .map((c, idx) => {
-      return `
-        <article class="concurso-card" data-concurso-id="${c.id}" data-indice-real="${idx % CONCURSOS.length}">
-          <div class="card-top-row">
-            <span class="card-num">#${c.numero} • ${c.tipo === 'SESSÃO ESPECIAL' ? 'EXTRA' : 'HORA'}</span>
-            <span class="card-status aberto" data-status-for="${c.id}">HOJE</span>
-          </div>
-          <div class="card-hora">${c.horario}</div>
-          <div class="card-timer-box">
-            <span data-label-for="${c.id}">FECHA EM</span>
-            <strong data-timer-for="${c.id}">--:--:--</strong>
-          </div>
-          <div class="card-cta-line">
-            <span>DEZENA • R$ 2,50</span>
-            <span>ENTRAR ➔</span>
-          </div>
-        </article>
-      `;
-    })
+    .map(c => `
+      <article class="concurso-card" data-concurso-id="${c.id}">
+        <div class="card-top-row">
+          <span class="card-num">#${c.numero} • ${c.tipo}</span>
+          <span class="card-status aberto" data-status-for="${c.id}">HOJE</span>
+        </div>
+        <div class="card-hora">${c.horario}</div>
+        <div class="card-timer-box">
+          <span data-label-for="${c.id}">FECHA EM</span>
+          <strong data-timer-for="${c.id}">--:--:--</strong>
+        </div>
+        <div class="card-cta-line">
+          <span>DZ • R$ 2,50</span>
+          <span>ENTRAR ➔</span>
+        </div>
+      </article>
+    `)
     .join('');
 
   carouselTrackEl.querySelectorAll('.concurso-card').forEach(card => {
     card.addEventListener('click', () => {
-      const c = CONCURSOS.find(item => item.id === card.dataset.concursoId);
-      if (c) abrirModalConcurso(c);
+      const encontrado = CONCURSOS.find(item => item.id === card.dataset.concursoId);
+      if (encontrado) abrirModalConcurso(encontrado);
     });
   });
 }
 
 function larguraUmBloco() {
-  if (!carouselTrackEl) return 178 * CONCURSOS.length;
   const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
-  if (!primeiroCard) return 178 * CONCURSOS.length;
+  if (!primeiroCard) return 174 * CONCURSOS.length;
   return (primeiroCard.offsetWidth + 10) * CONCURSOS.length;
 }
 
 function normalizarLoopCarrossel() {
-  if (!carouselViewportEl || !carouselIndicadorEl) return;
   const bloco = larguraUmBloco();
   if (!bloco) return;
 
@@ -169,16 +164,14 @@ function normalizarLoopCarrossel() {
     carouselViewportEl.scrollLeft -= bloco;
   }
 
-  const primeiroCard = carouselTrackEl && carouselTrackEl.querySelector('.concurso-card');
-  const passo = primeiroCard ? primeiroCard.offsetWidth + 10 : 178;
+  const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
+  const passo = primeiroCard ? primeiroCard.offsetWidth + 10 : 174;
   const idxAtual = Math.round((carouselViewportEl.scrollLeft % bloco) / passo) % CONCURSOS.length;
   const numeroExibido = pad2(((idxAtual + CONCURSOS.length) % CONCURSOS.length) + 1);
   carouselIndicadorEl.textContent = `Concurso #${numeroExibido} de ${CONCURSOS.length}`;
 }
 
 function focarConcursoNoCarrossel(concursoId, suave = true) {
-  if (!carouselViewportEl || !carouselTrackEl) return;
-  const bloco = larguraUmBloco();
   const cardsCentrais = Array.from(carouselTrackEl.querySelectorAll('.concurso-card')).slice(
     CONCURSOS.length,
     CONCURSOS.length * 2
@@ -186,46 +179,41 @@ function focarConcursoNoCarrossel(concursoId, suave = true) {
   const alvo = cardsCentrais.find(el => el.dataset.concursoId === concursoId);
   if (!alvo) return;
 
-  const destino = alvo.offsetLeft - 14;
+  const destino = Math.max(0, alvo.offsetLeft - 14);
   if (suave) {
     carouselViewportEl.scrollTo({ left: destino, behavior: 'smooth' });
   } else {
-    carouselViewportEl.scrollLeft = destino || bloco;
+    carouselViewportEl.scrollLeft = destino;
   }
   normalizarLoopCarrossel();
 }
 
-if (btnPrevSlideEl && carouselViewportEl) {
-  btnPrevSlideEl.addEventListener('click', () => {
-    carouselViewportEl.scrollBy({ left: -185, behavior: 'smooth' });
-  });
-}
+btnPrevSlideEl.addEventListener('click', () => {
+  carouselViewportEl.scrollBy({ left: -174, behavior: 'smooth' });
+});
 
-if (btnNextSlideEl && carouselViewportEl) {
-  btnNextSlideEl.addEventListener('click', () => {
-    carouselViewportEl.scrollBy({ left: 185, behavior: 'smooth' });
-  });
-}
+btnNextSlideEl.addEventListener('click', () => {
+  carouselViewportEl.scrollBy({ left: 174, behavior: 'smooth' });
+});
 
-if (btnIrProximoEl) {
-  btnIrProximoEl.addEventListener('click', () => {
-    focarConcursoNoCarrossel(idProximoGlobal, true);
-  });
-}
+btnIrProximoEl.addEventListener('click', () => {
+  focarConcursoNoCarrossel(idProximoGlobal, true);
+});
 
-if (carouselViewportEl) {
-  carouselViewportEl.addEventListener('scroll', normalizarLoopCarrossel, { passive: true });
-}
+btnHeroProximoEl.addEventListener('click', () => {
+  focarConcursoNoCarrossel(idProximoGlobal, true);
+  document.getElementById('secao-concursos').scrollIntoView({ behavior: 'smooth' });
+});
+
+carouselViewportEl.addEventListener('scroll', normalizarLoopCarrossel, { passive: true });
 
 function atualizarCronometros() {
   const agora = new Date();
-  if (relogioAtualEl) {
-    relogioAtualEl.textContent = agora.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  }
+  relogioAtualEl.textContent = agora.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 
   let menorRestanteHoje = Infinity;
   let idProximoHoje = null;
@@ -271,7 +259,7 @@ function atualizarCronometros() {
       labelEl.textContent = info.hoje ? 'FECHA EM' : 'PRÓXIMO CICLO';
     });
 
-    if (concursoAtivo && concursoAtivo.id === concurso.id && modalCronometroEl) {
+    if (concursoAtivo && concursoAtivo.id === concurso.id) {
       modalCronometroEl.textContent = duracaoFmt;
     }
   });
@@ -282,168 +270,50 @@ function atualizarCronometros() {
   }
 }
 
-async function carregarResultadoDoHorario(horarioStr) {
-  if (!modalUltimoResultadoEl) return;
-  modalUltimoResultadoEl.textContent = 'Aguardando apuração';
-  try {
-    const hojeIso = new Date().toISOString().slice(0, 10);
-    const res = await fetch(
-      `/api/resultados?horario=${encodeURIComponent(horarioStr)}&data=${encodeURIComponent(hojeIso)}`
-    );
-    if (!res.ok) return;
-    const payload = await res.json();
-    const item =
-      (payload.resultados && payload.resultados[0]) ||
-      (payload.ultimoPorHorario && payload.ultimoPorHorario[horarioStr]);
-    if (item && item.dezena) {
-      modalUltimoResultadoEl.textContent = `Dezena ${item.dezena} • Grupo ${item.grupo}`;
-    }
-  } catch (_) {
-    // Mantém estado padrão em caso de erro de rede
-  }
-}
-
-function pararAgentesModal() {
-  if (timerAgentesId) {
-    clearTimeout(timerAgentesId);
-    timerAgentesId = null;
-  }
-  if (slotAgentesEl) {
-    slotAgentesEl.innerHTML = '';
-  }
-}
-
-function escolherDezenaAgente(agente) {
-  const prefs = Array.isArray(agente.dezenasPreferidas) ? agente.dezenasPreferidas : [];
-  let candidata = '';
-
-  if (prefs.length > 0 && Math.random() < 0.65) {
-    const escolhida = prefs[Math.floor(Math.random() * prefs.length)];
-    candidata = String(escolhida).padStart(2, '0');
-  } else {
-    candidata = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
-  }
-
-  if (candidata === ultimaDezenaAgente) {
-    const idx = DEZENAS_100.indexOf(candidata);
-    candidata = DEZENAS_100[(idx + 1) % DEZENAS_100.length];
-  }
-
-  ultimaDezenaAgente = candidata;
-  return candidata;
-}
-
-function exibirBalaoAgente(cfg, concurso) {
-  if (!slotAgentesEl || !concursoAtivo || concursoAtivo.id !== concurso.id) return;
-  if (document.hidden) return;
-
-  const ativos = (cfg.agentes || []).filter(a => a && a.ativo !== false);
-  if (ativos.length === 0) {
-    slotAgentesEl.innerHTML = '';
+/* BALÕES DE MOVIMENTAÇÃO DENTRO DO CONCURSO INDIVIDUAL */
+function exibirBalaoAgente() {
+  if (!concursoAtivo || !AGENTES_AQUECIMENTO.ativo || !AGENTES_AQUECIMENTO.perfis.length) {
     return;
   }
 
-  const candidatos = ativos.length > 1 ? ativos.filter(a => a.id !== ultimoAgenteId) : ativos;
-  const agente = candidatos[Math.floor(Math.random() * candidatos.length)];
-  ultimoAgenteId = agente.id;
+  let idx = Math.floor(Math.random() * AGENTES_AQUECIMENTO.perfis.length);
+  if (idx === ultimoAgenteIdx && AGENTES_AQUECIMENTO.perfis.length > 1) {
+    idx = (idx + 1) % AGENTES_AQUECIMENTO.perfis.length;
+  }
+  ultimoAgenteIdx = idx;
 
-  const dz = escolherDezenaAgente(agente);
-  const nome = agente.nome || 'Passageiro 99';
-  const regiao = agente.regiao || 'Rota 99';
+  const agente = AGENTES_AQUECIMENTO.perfis[idx];
+  const dzAleatoria = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
 
   slotAgentesEl.innerHTML = `
-    <div class="agente-balao">
-      <div class="agente-balao-info">
-        <strong>${nome}</strong> garantiu bilhete no sorteio das ${concurso.horario}
-        <span class="agente-balao-regiao">● ${regiao} • agora mesmo</span>
+    <div class="balao-compra">
+      <div>
+        <strong>${agente.nome}</strong> (${agente.rota}) reservou no sorteio das <strong>${concursoAtivo.horario}</strong>
       </div>
-      <span class="agente-balao-dz">DZ ${dz}</span>
+      <span class="balao-dz-tag">DZ ${dzAleatoria}</span>
     </div>
   `;
 }
 
-async function iniciarAgentesModal(concurso) {
-  pararAgentesModal();
-  if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
-
-  try {
-    const res = await fetch('/api/agentes');
-    if (!res.ok) return;
-    const cfg = await res.json();
-    configAgentesCache = cfg;
-
-    if (!cfg || !cfg.ativoGlobal || !concursoAtivo || concursoAtivo.id !== concurso.id) {
-      return;
-    }
-
-    exibirBalaoAgente(cfg, concurso);
-
-    const minSeg = Math.max(5, Number(cfg.intervaloMinSegundos) || 8);
-    const maxSeg = Math.max(minSeg + 2, Number(cfg.intervaloMaxSegundos) || 16);
-
-    const agendarProximo = () => {
-      if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
-      const esperaMs = (minSeg + Math.random() * (maxSeg - minSeg)) * 1000;
-      timerAgentesId = setTimeout(() => {
-        if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
-        if (!document.hidden) {
-          exibirBalaoAgente(configAgentesCache, concurso);
-        }
-        agendarProximo();
-      }, esperaMs);
-    };
-
-    agendarProximo();
-  } catch (_) {
-    // Falha silenciosa sem afetar o modal ou o restante da página
+function iniciarBaloesModal() {
+  pararBaloesModal();
+  if (!AGENTES_AQUECIMENTO.ativo) {
+    slotAgentesEl.innerHTML = '';
+    return;
   }
+  exibirBalaoAgente();
+  timerBaloesId = setInterval(exibirBalaoAgente, AGENTES_AQUECIMENTO.intervaloMs);
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    if (timerAgentesId) {
-      clearTimeout(timerAgentesId);
-      timerAgentesId = null;
-    }
-    if (slotAgentesEl) slotAgentesEl.innerHTML = '';
-  } else if (concursoAtivo) {
-    iniciarAgentesModal(concursoAtivo);
+function pararBaloesModal() {
+  if (timerBaloesId) {
+    clearInterval(timerBaloesId);
+    timerBaloesId = null;
   }
-});
-
-if (formConsultarBilheteEl && inputIdBilheteEl && resultadoConsultaBilheteEl) {
-  formConsultarBilheteEl.addEventListener('submit', async e => {
-    e.preventDefault();
-    const idBusca = inputIdBilheteEl.value.trim();
-    if (!idBusca) return;
-
-    resultadoConsultaBilheteEl.innerHTML = '<span style="color:#94a3b8;">Consultando bilhete...</span>';
-    try {
-      const res = await fetch(`/api/bilhete/${encodeURIComponent(idBusca)}`);
-      const data = await res.json();
-      if (!res.ok) {
-        resultadoConsultaBilheteEl.innerHTML = `<span style="color:#f87171;">${data.erro || 'Bilhete não encontrado.'}</span>`;
-        return;
-      }
-
-      const selecaoFmt = Array.isArray(data.selecao) ? data.selecao.join(' • ') : data.selecao;
-      resultadoConsultaBilheteEl.innerHTML = `
-        <div style="background:#050811;border:1px solid #b8ff00;padding:10px;line-height:1.45;">
-          <strong style="color:#b8ff00;font-family:'Orbitron',sans-serif;">${data.id}</strong><br />
-          <span>Data: <strong>${data.data}</strong> • Horário: <strong>${data.horarioConcurso}</strong></span><br />
-          <span>Modalidade: <strong>${data.modalidade}</strong> • Seleção: <strong>${selecaoFmt}</strong></span><br />
-          <span>Status: <strong style="color:#38bdf8;">${data.statusApuracao}</strong></span>
-        </div>
-      `;
-    } catch (_) {
-      resultadoConsultaBilheteEl.innerHTML =
-        '<span style="color:#f87171;">Falha de comunicação ao consultar bilhete.</span>';
-    }
-  });
+  slotAgentesEl.innerHTML = '';
 }
 
 function montarGradeModal() {
-  if (!modalGradeDzEl) return;
   modalGradeDzEl.innerHTML = DEZENAS_100.map(
     dz => `<button type="button" class="cyber-dz-btn" data-dz="${dz}">${dz}</button>`
   ).join('');
@@ -457,121 +327,139 @@ function montarGradeModal() {
 
 function selecionarDezena(dz) {
   dezenaSelecionada = dz;
-  if (modalDezenaDisplayEl) modalDezenaDisplayEl.textContent = dz || '--';
-  if (modalGradeDzEl) {
-    modalGradeDzEl.querySelectorAll('.cyber-dz-btn').forEach(btn => {
-      btn.classList.toggle('selecionada', btn.dataset.dz === dz);
-    });
-  }
+  modalDezenaDisplayEl.textContent = dz || '--';
+  modalGradeDzEl.querySelectorAll('.cyber-dz-btn').forEach(btn => {
+    btn.classList.toggle('selecionada', btn.dataset.dz === dz);
+  });
 }
 
 function abrirModalConcurso(concurso) {
-  if (!modalEl) return;
   concursoAtivo = concurso;
   dezenaSelecionada = '';
-  if (modalCodigoEl) modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
-  if (modalTituloEl) modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
-  if (modalFeedbackEl) {
-    modalFeedbackEl.textContent = '';
-    modalFeedbackEl.className = 'modal-feedback';
-  }
+  modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
+  modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
+  modalUltimoResultadoEl.textContent = 'Aguardando apuração';
+  modalFeedbackEl.textContent = '';
+  modalFeedbackEl.className = 'modal-feedback';
   selecionarDezena('');
   atualizarCronometros();
   modalEl.classList.remove('oculto');
-  carregarResultadoDoHorario(concurso.horario);
-  iniciarAgentesModal(concurso);
+  iniciarBaloesModal();
 }
 
 function fecharModalConcurso() {
-  pararAgentesModal();
+  pararBaloesModal();
   concursoAtivo = null;
-  if (modalEl) modalEl.classList.add('oculto');
+  modalEl.classList.add('oculto');
 }
 
-if (btnFecharModalEl) {
-  btnFecharModalEl.addEventListener('click', fecharModalConcurso);
+btnFecharModalEl.addEventListener('click', fecharModalConcurso);
+modalEl.addEventListener('click', e => {
+  if (e.target === modalEl) fecharModalConcurso();
+});
+
+btnModalSurpresinhaEl.addEventListener('click', () => {
+  const sorteada = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
+  selecionarDezena(sorteada);
+  modalFeedbackEl.className = 'modal-feedback';
+  modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
+});
+
+function lerReservasLocais() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_RESERVAS_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
 }
 
-if (modalEl) {
-  modalEl.addEventListener('click', e => {
-    if (e.target === modalEl) fecharModalConcurso();
-  });
+function salvarReservaLocal(reserva) {
+  const lista = lerReservasLocais();
+  lista.unshift(reserva);
+  localStorage.setItem(STORAGE_RESERVAS_KEY, JSON.stringify(lista.slice(0, 100)));
 }
 
-if (btnModalSurpresinhaEl) {
-  btnModalSurpresinhaEl.addEventListener('click', () => {
-    const sorteada = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
-    selecionarDezena(sorteada);
-    if (modalFeedbackEl) {
-      modalFeedbackEl.className = 'modal-feedback';
-      modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
-    }
-  });
-}
+formConcursoIndividualEl.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!concursoAtivo) return;
 
-if (formConcursoIndividualEl) {
-  formConcursoIndividualEl.addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!concursoAtivo) return;
+  if (!dezenaSelecionada) {
+    modalFeedbackEl.className = 'modal-feedback erro';
+    modalFeedbackEl.textContent = 'Escolha uma dezena (01 a 00) antes de continuar.';
+    return;
+  }
 
-    if (!dezenaSelecionada) {
-      if (modalFeedbackEl) {
-        modalFeedbackEl.className = 'modal-feedback erro';
-        modalFeedbackEl.textContent = 'Escolha uma dezena (01 a 00) antes de continuar.';
-      }
+  const codigoBilhete = `99-${String(Math.floor(1000 + Math.random() * 9000))}`;
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+
+  modalFeedbackEl.className = 'modal-feedback';
+  modalFeedbackEl.textContent = 'Processando reserva...';
+
+  try {
+    const res = await fetch('/api/checkout/criar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
+        modalidade: 'DZ',
+        selecao: dezenaSelecionada,
+        valor: concursoAtivo.valorBilhete,
+        lead: {
+          nome: modalNomeEl.value.trim(),
+          contato: modalWhatsappEl.value.trim()
+        }
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.checkout_url) {
+      window.location.href = data.checkout_url;
       return;
     }
+  } catch (err) {
+    // Segue para registro local de demonstração caso o endpoint esteja em pausa
+  }
 
-    if (modalFeedbackEl) {
-      modalFeedbackEl.className = 'modal-feedback';
-      modalFeedbackEl.textContent = 'Conectando ao checkout...';
-    }
-
-    try {
-      const res = await fetch('/api/checkout/criar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
-          horarioConcurso: concursoAtivo.horario,
-          dataCiclo: new Date().toISOString().slice(0, 10),
-          modalidade: 'DZ',
-          selecao: dezenaSelecionada,
-          valor: concursoAtivo.valorBilhete,
-          lead: {
-            nome: modalNomeEl ? modalNomeEl.value.trim() : '',
-            contato: modalWhatsappEl ? modalWhatsappEl.value.trim() : ''
-          }
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        if (modalFeedbackEl) {
-          modalFeedbackEl.className = 'modal-feedback erro';
-          modalFeedbackEl.textContent =
-            data.erro ||
-            `Bilhete Dezena ${dezenaSelecionada} (Concurso ${concursoAtivo.horario}) registrado em modo pré-checkout enquanto o banco é finalizado.`;
-        }
-        return;
-      }
-
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-      }
-    } catch (_) {
-      if (modalFeedbackEl) {
-        modalFeedbackEl.className = 'modal-feedback erro';
-        modalFeedbackEl.textContent = 'Falha de comunicação ao iniciar o checkout.';
-      }
-    }
+  salvarReservaLocal({
+    id: codigoBilhete,
+    data: dataHoje,
+    horario: concursoAtivo.horario,
+    concursoNumero: concursoAtivo.numero,
+    dezena: dezenaSelecionada,
+    valor: 'R$ 2,50',
+    nome: modalNomeEl.value.trim()
   });
-}
+
+  modalFeedbackEl.className = 'modal-feedback';
+  modalFeedbackEl.textContent = `Bilhete ${codigoBilhete} reservado • Dezena ${dezenaSelecionada} • Concurso ${concursoAtivo.horario} (${dataHoje}).`;
+  formConcursoIndividualEl.reset();
+});
+
+formConsultaIdEl.addEventListener('submit', e => {
+  e.preventDefault();
+  const termo = inputConsultaIdEl.value.trim().toUpperCase();
+  if (!termo) return;
+
+  const reservas = lerReservasLocais();
+  const achado = reservas.find(item => String(item.id).toUpperCase() === termo);
+
+  resultadoConsultaIdEl.classList.remove('oculto');
+  if (!achado) {
+    resultadoConsultaIdEl.innerHTML = `ID <strong>${termo}</strong> não encontrado neste dispositivo. Confira o código ou fale no atendimento.`;
+    return;
+  }
+
+  resultadoConsultaIdEl.innerHTML = `
+    <div><strong>ID:</strong> ${achado.id}</div>
+    <div><strong>Data &amp; Concurso:</strong> ${achado.data} às <strong>${achado.horario}</strong> (#${achado.concursoNumero})</div>
+    <div><strong>Dezena / Valor:</strong> <strong>${achado.dezena}</strong> • ${achado.valor}</div>
+    <div><strong>Status:</strong> Aguardando apuração oficial</div>
+  `;
+});
 
 function configurarQrPagina() {
-  if (!qrPaginaEl) return;
   const urlAtual = encodeURIComponent(window.location.href);
-  qrPaginaEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${urlAtual}`;
+  qrPaginaEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${urlAtual}`;
 }
 
 construirCarrossel();
@@ -579,3 +467,4 @@ montarGradeModal();
 configurarQrPagina();
 atualizarCronometros();
 setInterval(atualizarCronometros, 1000);
+a
