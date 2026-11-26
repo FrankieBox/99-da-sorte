@@ -19,23 +19,30 @@ const DEZENAS_100 = [
 const params = new URLSearchParams(window.location.search);
 
 const PRODUTO_PADRAO = {
-  titulo: 'Gift Card Pix de R$ 50,00 — Escolha sua Dezena da Sorte',
-  subtitulo: 'Participe por apenas R$ 2,50 e concorra a R$ 50,00 via Pix com transparência total.',
+  nomeProduto: 'Gift Card Pix R$ 50,00',
+  titulo: 'Transforme R$ 2,50 em R$ 50,00 no Pix!',
+  subtitulo:
+    'Escolha sua dezena da sorte (de 01 a 00), preencha seu WhatsApp e concorra ao Gift Card Pix de R$ 50,00 sem complicação.',
+  premioValor: 'R$ 50,00',
+  bannerUrl: '',
   copyPontos: [
-    'Escolha a sua dezena de 01 a 99 ou 00 e pague apenas R$ 2,50 por bilhete.',
-    'Prêmio de R$ 50,00 em Gift Card / Pix para quem acertar a dezena no sorteio compartilhado do 99 da sorte.',
-    'Processo simples e direto: escolha o número, informe seu contato e já fica tudo registrado para falarmos com você caso seja o vencedor.'
+    'Entrada super acessível: apenas R$ 2,50 por bilhete para concorrer a R$ 50,00 livres para usar como quiser.',
+    'Chance direta de 1 em 100 por bilhete na modalidade Dezena (01 a 99 e 00) — muito mais simples que sorteios gigantes.',
+    'Sem cadastro demorado: você escolhe seu número em segundos, informa seu WhatsApp e já fica identificado para receber.'
   ],
   regraConcorrer:
-    'Cada bilhete corresponde a 1 Dezena (01 a 99 ou 00), somando 100 opções possíveis. O sorteio é único e compartilhado entre os produtos, e entraremos em contato pelos dados informados no formulário caso sua dezena seja contemplada.',
-  ctaBotao: 'Garantir Dezena por R$ 2,50',
+    'Cada bilhete equivale a 1 Dezena (01 a 99 ou 00), totalizando 100 combinações possíveis no sorteio único compartilhado do 99 da sorte. Se a dezena sorteada coincidir com o seu bilhete, entramos em contato pelo WhatsApp informado para entregar seu Gift Card Pix de R$ 50,00.',
+  ctaBotao: 'Garantir Minha Dezena por R$ 2,50',
   modalidade: 'DZ',
   precoBilhete: 2.5
 };
 
 let configPagina = {
+  nomeProduto: params.get('produto') || PRODUTO_PADRAO.nomeProduto,
   titulo: params.get('titulo') || PRODUTO_PADRAO.titulo,
   subtitulo: params.get('subtitulo') || PRODUTO_PADRAO.subtitulo,
+  premioValor: params.get('premio') || PRODUTO_PADRAO.premioValor,
+  bannerUrl: params.get('banner') || PRODUTO_PADRAO.bannerUrl,
   copyPontos: params.get('copy') ? [params.get('copy')] : PRODUTO_PADRAO.copyPontos,
   regraConcorrer: params.get('regra') || PRODUTO_PADRAO.regraConcorrer,
   ctaBotao: params.get('cta') || PRODUTO_PADRAO.ctaBotao,
@@ -48,6 +55,11 @@ let configPagina = {
 
 const lpTituloEl = document.getElementById('lp-titulo');
 const lpSubtituloEl = document.getElementById('lp-subtitulo');
+const lpBadgeModEl = document.getElementById('lp-badge-mod');
+const lpPlacarCustoEl = document.getElementById('lp-placar-custo');
+const lpPlacarPremioEl = document.getElementById('lp-placar-premio');
+const lpCriativoBoxEl = document.getElementById('lp-criativo-box');
+const lpCriativoImgEl = document.getElementById('lp-criativo-img');
 const lpCopyBlocosEl = document.getElementById('lp-copy-blocos');
 const lpRegraEl = document.getElementById('lp-regra');
 const lpModalidadeLabelEl = document.getElementById('lp-modalidade-label');
@@ -56,6 +68,7 @@ const lpPrecoEl = document.getElementById('lp-preco');
 const lpVisoresEl = document.getElementById('lp-visores-selecao');
 const lpGradeDezenasEl = document.getElementById('lp-grade-dezenas');
 const lpCtaTituloEl = document.getElementById('lp-cta-titulo');
+const btnSurpresinhaEl = document.getElementById('btn-surpresinha');
 const btnLpSubmitEl = document.getElementById('btn-lp-submit');
 const formLandingEl = document.getElementById('form-landing');
 const leadNomeEl = document.getElementById('lead-nome');
@@ -123,15 +136,28 @@ function renderizarCopy() {
 
 function aplicarDadosPagina() {
   const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
-  document.title = `99 da sorte — ${configPagina.titulo}`;
+  const precoFmt = formatarMoeda(configPagina.precoBilhete);
+
+  document.title = `99 da sorte — ${configPagina.nomeProduto}`;
   lpTituloEl.textContent = configPagina.titulo;
   lpSubtituloEl.textContent = configPagina.subtitulo;
+  lpBadgeModEl.textContent = `${cfg.codigo} • ${cfg.nome}`;
+  lpPlacarCustoEl.textContent = precoFmt;
+  lpPlacarPremioEl.textContent = configPagina.premioValor;
+
+  if (configPagina.bannerUrl) {
+    lpCriativoImgEl.src = configPagina.bannerUrl;
+    lpCriativoBoxEl.classList.remove('oculto');
+  } else {
+    lpCriativoBoxEl.classList.add('oculto');
+  }
+
   renderizarCopy();
   lpRegraEl.textContent = configPagina.regraConcorrer;
   lpModalidadeLabelEl.textContent = `${cfg.codigo} (${cfg.nome})`;
   lpChanceLabelEl.textContent = cfg.chance;
-  lpPrecoEl.textContent = formatarMoeda(configPagina.precoBilhete);
-  lpCtaTituloEl.textContent = configPagina.ctaBotao;
+  lpPrecoEl.textContent = precoFmt;
+  lpCtaTituloEl.textContent = `Garanta sua ${cfg.nome} por ${precoFmt}`;
   btnLpSubmitEl.textContent = configPagina.ctaBotao;
 
   itensSelecionados = Array.from({ length: cfg.qtd }, () => '');
@@ -140,7 +166,7 @@ function aplicarDadosPagina() {
   const colClass = cfg.qtd === 3 ? 'cols-3' : cfg.qtd === 2 ? 'cols-2' : 'cols-1';
   let html = `<div class="visores-grid ${colClass}">`;
   for (let i = 0; i < cfg.qtd; i++) {
-    const rotulo = cfg.qtd > 1 ? `${i + 1}º ${cfg.tipo}` : `Bilhete ${cfg.nome} (${cfg.codigo})`;
+    const rotulo = cfg.qtd > 1 ? `${i + 1}º ${cfg.tipo}` : `Seu Bilhete ${cfg.nome} (${cfg.codigo})`;
     html += `
       <div class="visor-box ${i === 0 ? 'ativo' : ''}" data-alvo="item-${i}">
         <span class="visor-label">${rotulo}</span>
@@ -178,6 +204,27 @@ function atualizarVisores() {
   destacarDezenaAtiva();
 }
 
+btnSurpresinhaEl.addEventListener('click', () => {
+  const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
+  itensSelecionados = Array.from({ length: cfg.qtd }, () => {
+    if (cfg.tipo === 'dezena') {
+      return DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
+    }
+    if (cfg.tipo === 'grupo') {
+      return String(Math.floor(Math.random() * 25) + 1).padStart(2, '0');
+    }
+    if (cfg.tipo === 'centena') {
+      return String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    }
+    if (cfg.tipo === 'milhar') {
+      return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    }
+    return String(Math.floor(Math.random() * 10));
+  });
+  atualizarVisores();
+  mostrarFeedback(`Dezena da sorte sugerida: ${itensSelecionados.join(' • ')}`, 'sucesso');
+});
+
 document.querySelector('[data-teclado="landing"]').addEventListener('click', e => {
   const btn = e.target.closest('button');
   if (!btn) return;
@@ -214,7 +261,7 @@ formLandingEl.addEventListener('submit', async e => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      produto: configPagina.titulo,
+      produto: configPagina.nomeProduto,
       modalidade: cfg.codigo,
       selecao,
       valor: configPagina.precoBilhete,
