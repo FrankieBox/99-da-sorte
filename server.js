@@ -9,11 +9,14 @@ const DATA_DIR = path.join(__dirname, 'data');
 const CATALOGO_PATH = path.join(DATA_DIR, 'catalogo.json');
 const VENDAS_PATH = path.join(DATA_DIR, 'vendas.json');
 const PEDIDOS_PATH = path.join(DATA_DIR, 'pedidos_online.json');
+const RESULTADOS_PATH = path.join(DATA_DIR, 'resultados.json');
+const AGENTES_PATH = path.join(DATA_DIR, 'agentes.json');
 
 const INFINITEPAY_HANDLE = (process.env.INFINITEPAY_HANDLE || '').replace(/^\$/, '').trim();
 const INFINITEPAY_API_KEY = (process.env.INFINITEPAY_API_KEY || '').trim();
 const INFINITEPAY_LINKS_URL = 'https://api.checkout.infinitepay.io/links';
 const INFINITEPAY_CHECK_URL = 'https://api.checkout.infinitepay.io/payment_check';
+const ADMIN_CHAVE = (process.env.ADMIN_KEY || '99dasorte-adm').trim();
 const VALOR_MINIMO_CHECKOUT = 1.0;
 
 app.use(express.json());
@@ -78,6 +81,22 @@ function gerarCatalogoPadrao() {
   };
 }
 
+function gerarAgentesPadrao() {
+  return {
+    ativoGlobal: true,
+    intervaloMinSegundos: 8,
+    intervaloMaxSegundos: 16,
+    agentes: [
+      { id: 'AGT-01', nome: 'Lucas M.', regiao: 'Zona Sul', dezenasPreferidas: ['27', '07', '77'], ativo: true },
+      { id: 'AGT-02', nome: 'Camila R.', regiao: 'Centro', dezenasPreferidas: ['14', '24', '88'], ativo: true },
+      { id: 'AGT-03', nome: 'Rafael S.', regiao: 'Zona Leste', dezenasPreferidas: ['03', '33', '69'], ativo: true },
+      { id: 'AGT-04', nome: 'Beatriz F.', regiao: 'Zona Norte', dezenasPreferidas: ['19', '45', '00'], ativo: true },
+      { id: 'AGT-05', nome: 'Diego T.', regiao: 'Zona Oeste', dezenasPreferidas: ['11', '52', '91'], ativo: true },
+      { id: 'AGT-06', nome: 'Aline C.', regiao: 'Centro', dezenasPreferidas: ['08', '22', '64'], ativo: true }
+    ]
+  };
+}
+
 function inicializarBancoJSON() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -90,6 +109,12 @@ function inicializarBancoJSON() {
   }
   if (!fs.existsSync(PEDIDOS_PATH)) {
     fs.writeFileSync(PEDIDOS_PATH, JSON.stringify([], null, 2), 'utf8');
+  }
+  if (!fs.existsSync(RESULTADOS_PATH)) {
+    fs.writeFileSync(RESULTADOS_PATH, JSON.stringify([], null, 2), 'utf8');
+  }
+  if (!fs.existsSync(AGENTES_PATH)) {
+    fs.writeFileSync(AGENTES_PATH, JSON.stringify(gerarAgentesPadrao(), null, 2), 'utf8');
   }
 }
 
@@ -136,7 +161,20 @@ function validarItem(item, tipo) {
   return { erro: 'Tipo de item desconhecido.' };
 }
 
-function prepararRegistroVenda({ modalidade, selecao, valor, origem, produto, lead, orderNsu }) {
+function calcularGrupoPorDezena(dezenaNormalizada) {
+  const num = dezenaNormalizada === '00' ? 100 : Number(dezenaNormalizada);
+  const grupo = Math.ceil(num / 4);
+  return String(grupo).padStart(2, '0');
+}
+
+function normalizarDezenaSorteio(entrada) {
+  const limpo = String(entrada || '').trim();
+  if (!/^\d{1,2}$/.test(limpo)) return null;
+  const pad = limpo.padStart(2, '0');
+  return DEZENAS_VALIDAS.has(pad) ? pad : null;
+}
+
+function prepararRegistroVenda({ modalidade, selecao, valor, origem, produto, horarioConcurso, dataCiclo, lead, orderNsu }) {
   const cfg = COTACOES[modalidade];
   if (!cfg) return { erro: 'Modalidade inválida.' };
 
@@ -166,11 +204,14 @@ function prepararRegistroVenda({ modalidade, selecao, valor, origem, produto, le
   const valorFormatado = Number(valorNumerico.toFixed(2));
   const retornoPotencial = Number((valorFormatado * cfg.multiplicador).toFixed(2));
   const origemLimpa = origem === 'landing' ? 'landing' : 'presencial';
+  const agoraIso = new Date().toISOString();
 
   return {
     venda: {
       id: `VND-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      dataHora: new Date().toISOString(),
+      dataHora: agoraIso,
+      dataCiclo: String(dataCiclo || '').trim() || agoraIso.slice(0, 10),
+      horarioConcurso: horarioConcurso ? String(horarioConcurso).trim() : null,
       origem: origemLimpa,
       produto: produto || null,
       lead: lead || null,
@@ -245,6 +286,8 @@ function efetivarPedidoPago(orderNsu, detalhePagamento = null) {
     valor: pedido.valor,
     origem: 'landing',
     produto: pedido.produto,
+    horarioConcurso: pedido.horarioConcurso,
+    dataCiclo: pedido.dataCiclo,
     lead: pedido.lead,
     orderNsu: pedido.order_nsu
   });
@@ -321,6 +364,145 @@ app.delete('/api/vendas/:id', (req, res) => {
   res.json({ sucesso: true });
 });
 
+// Resultados dos concursos e cruzamento de bilhetes
+app.get('/api/resultados', (req, res) => {
+  try {
+    const { data, horario } = req.query;
+    const resultados = lerJSON(RESULTADOS_PATH);
+    let filtrados = resultados;
+
+    if (data) {
+      filtrados = filtrados.filter(r => r.dataCiclo === String(data).trim());
+    }
+    if (horario) {
+      filtrados = filtrados.filter(r => r.horario === String(horario).trim());
+    }
+
+    const ultimoPorHorario = {};
+    for (const r of resultados) {
+      if (!ultimoPorHorario[r.horario]) {
+        ultimoPorHorario[r.horario] = r;
+      }
+    }
+
+    res.json({
+      total: filtrados.length,
+      resultados: filtrados,
+      ultimoPorHorario
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao ler resultados.json' });
+  }
+});
+
+app.post('/api/resultados', (req, res) => {
+  const chaveEnviada = req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin);
+  if (chaveEnviada !== ADMIN_CHAVE) {
+    return res.status(401).json({ erro: 'Acesso não autorizado para publicar resultado.' });
+  }
+
+  const { horario, dezena, dataCiclo } = req.body || {};
+  const dezenaValida = normalizarDezenaSorteio(dezena);
+  if (!horario || !dezenaValida) {
+    return res.status(400).json({ erro: 'Informe um horário válido e uma dezena (01 a 99 ou 00).' });
+  }
+
+  const dataLimpa = String(dataCiclo || '').trim() || new Date().toISOString().slice(0, 10);
+  const grupoCorrespondente = calcularGrupoPorDezena(dezenaValida);
+
+  const novoResultado = {
+    id: `RES-${Date.now()}`,
+    dataCiclo: dataLimpa,
+    horario: String(horario).trim(),
+    dezena: dezenaValida,
+    grupo: grupoCorrespondente,
+    atualizadoEm: new Date().toISOString()
+  };
+
+  const resultados = lerJSON(RESULTADOS_PATH);
+  const semDuplicata = resultados.filter(
+    r => !(r.dataCiclo === novoResultado.dataCiclo && r.horario === novoResultado.horario)
+  );
+  semDuplicata.unshift(novoResultado);
+  salvarJSON(RESULTADOS_PATH, semDuplicata);
+
+  const vendas = lerJSON(VENDAS_PATH);
+  const possiveisGanhadores = vendas.filter(v => {
+    const bateDezena =
+      v.modalidade === 'DZ' &&
+      (String(v.selecao).padStart(2, '0') === dezenaValida ||
+        String(v.chaveNormalizada || '').endsWith(`-${dezenaValida}`));
+    const bateHorario = !v.horarioConcurso || v.horarioConcurso === novoResultado.horario;
+    const bateData = !v.dataCiclo || v.dataCiclo === novoResultado.dataCiclo;
+    return bateDezena && bateHorario && bateData;
+  });
+
+  res.status(201).json({
+    resultado: novoResultado,
+    possiveisGanhadores
+  });
+});
+
+// Consulta de bilhete pelo ID
+app.get('/api/bilhete/:id', (req, res) => {
+  try {
+    const idBusca = decodeURIComponent(req.params.id || '').trim();
+    if (!idBusca) {
+      return res.status(400).json({ erro: 'Informe o ID do bilhete.' });
+    }
+
+    const vendas = lerJSON(VENDAS_PATH);
+    const venda = vendas.find(v => String(v.id).toLowerCase() === idBusca.toLowerCase());
+
+    if (!venda) {
+      return res.status(404).json({ erro: 'Bilhete não encontrado para o ID informado.' });
+    }
+
+    const resultados = lerJSON(RESULTADOS_PATH);
+    const dataVenda = venda.dataCiclo || String(venda.dataHora || '').slice(0, 10);
+    const resultadoHorario = resultados.find(
+      r =>
+        r.horario === venda.horarioConcurso &&
+        (!venda.dataCiclo || r.dataCiclo === venda.dataCiclo)
+    );
+
+    let statusApuracao = 'Aguardando resultado do horário';
+    if (resultadoHorario) {
+      const dezenaBilhete = Array.isArray(venda.selecao)
+        ? venda.selecao.join('-')
+        : String(venda.selecao).padStart(2, '0');
+      const acertou = venda.modalidade === 'DZ' && dezenaBilhete === resultadoHorario.dezena;
+      statusApuracao = acertou
+        ? `Premiado! Dezena ${resultadoHorario.dezena} sorteada`
+        : `Apurado (Sorteada: ${resultadoHorario.dezena} • Grupo ${resultadoHorario.grupo})`;
+    }
+
+    res.json({
+      id: venda.id,
+      data: dataVenda,
+      horarioConcurso: venda.horarioConcurso || 'Não informado',
+      modalidade: venda.modalidade,
+      selecao: venda.selecao,
+      chaveNormalizada: venda.chaveNormalizada,
+      valor: venda.valor,
+      statusApuracao,
+      resultadoOficial: resultadoHorario || null
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao consultar bilhete.' });
+  }
+});
+
+// Banco de agentes de aquecimento
+app.get('/api/agentes', (req, res) => {
+  try {
+    const configAgentes = lerJSON(AGENTES_PATH);
+    res.json(configAgentes);
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao ler agentes.json' });
+  }
+});
+
 // Motor único de checkout para Landing Pages (InfinitePay)
 app.post('/api/checkout/criar', async (req, res) => {
   if (!INFINITEPAY_HANDLE) {
@@ -329,7 +511,7 @@ app.post('/api/checkout/criar', async (req, res) => {
     });
   }
 
-  const { modalidade, selecao, valor, produto, lead, retornoUrl } = req.body;
+  const { modalidade, selecao, valor, produto, horarioConcurso, dataCiclo, lead, retornoUrl } = req.body;
 
   const valorNumerico = Number(valor);
   if (isNaN(valorNumerico) || valorNumerico < VALOR_MINIMO_CHECKOUT) {
@@ -352,6 +534,8 @@ app.post('/api/checkout/criar', async (req, res) => {
     valor: valorNumerico,
     origem: 'landing',
     produto: produto || 'Produto Base',
+    horarioConcurso: horarioConcurso || null,
+    dataCiclo: dataCiclo || null,
     lead: { nome: nomeLead, contato: contatoLead }
   });
 
@@ -419,6 +603,8 @@ app.post('/api/checkout/criar', async (req, res) => {
       criadoEm: new Date().toISOString(),
       origem: 'landing',
       produto: tituloProduto,
+      horarioConcurso: preparado.venda.horarioConcurso,
+      dataCiclo: preparado.venda.dataCiclo,
       lead: { nome: nomeLead, contato: contatoLead },
       modalidade: preparado.venda.modalidade,
       selecao: preparado.venda.selecao,
@@ -514,4 +700,3 @@ app.get('/api/checkout/status/:orderNsu', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`99 da sorte rodando em http://localhost:${PORT}`);
 });
-  
