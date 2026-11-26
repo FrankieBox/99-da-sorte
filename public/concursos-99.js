@@ -39,10 +39,6 @@ const btnIrProximoEl = document.getElementById('btn-ir-proximo');
 const relogioAtualEl = document.getElementById('relogio-atual');
 const qrPaginaEl = document.getElementById('qr-pagina');
 
-const formConsultarBilheteEl = document.getElementById('form-consultar-bilhete');
-const inputIdBilheteEl = document.getElementById('input-id-bilhete');
-const resultadoConsultaBilheteEl = document.getElementById('resultado-consulta-bilhete');
-
 const modalEl = document.getElementById('modal-concurso');
 const btnFecharModalEl = document.getElementById('btn-fechar-modal');
 const modalCodigoEl = document.getElementById('modal-codigo');
@@ -61,7 +57,7 @@ const modalFeedbackEl = document.getElementById('modal-feedback');
 let concursoAtivo = null;
 let dezenaSelecionada = '';
 let idProximoGlobal = CONCURSOS[0].id;
-let posicaoInicialAjustada = false;
+let posicãoInicialAjustada = false;
 
 let configAgentesCache = null;
 let timerAgentesId = null;
@@ -261,8 +257,8 @@ function atualizarCronometros() {
     }
   });
 
-  if (!posicaoInicialAjustada) {
-    posicaoInicialAjustada = true;
+  if (!posicãoInicialAjustada) {
+    posicãoInicialAjustada = true;
     focarConcursoNoCarrossel(idProximoGlobal, false);
   }
 }
@@ -362,37 +358,6 @@ async function iniciarAgentesModal(concurso) {
   } catch (_) {
     // Falha silenciosa se rota de agentes estiver indisponível
   }
-}
-
-if (formConsultarBilheteEl) {
-  formConsultarBilheteEl.addEventListener('submit', async e => {
-    e.preventDefault();
-    const idBusca = inputIdBilheteEl.value.trim();
-    if (!idBusca) return;
-
-    resultadoConsultaBilheteEl.innerHTML = '<span style="color:#94a3b8;">Consultando bilhete...</span>';
-    try {
-      const res = await fetch(`/api/bilhete/${encodeURIComponent(idBusca)}`);
-      const data = await res.json();
-      if (!res.ok) {
-        resultadoConsultaBilheteEl.innerHTML = `<span style="color:#f87171;">${data.erro || 'Bilhete não encontrado.'}</span>`;
-        return;
-      }
-
-      const selecaoFmt = Array.isArray(data.selecao) ? data.selecao.join(' • ') : data.selecao;
-      resultadoConsultaBilheteEl.innerHTML = `
-        <div style="background:#050811;border:1px solid #b8ff00;padding:10px;line-height:1.45;">
-          <strong style="color:#b8ff00;font-family:'Orbitron',sans-serif;">${data.id}</strong><br />
-          <span>Data: <strong>${data.data}</strong> • Horário: <strong>${data.horarioConcurso}</strong></span><br />
-          <span>Modalidade: <strong>${data.modalidade}</strong> • Seleção: <strong>${selecaoFmt}</strong></span><br />
-          <span>Status: <strong style="color:#38bdf8;">${data.statusApuracao}</strong></span>
-        </div>
-      `;
-    } catch (_) {
-      resultadoConsultaBilheteEl.innerHTML =
-        '<span style="color:#f87171;">Falha de comunicação ao consultar bilhete.</span>';
-    }
-  });
 }
 
 function montarGradeModal() {
@@ -499,3 +464,4 @@ montarGradeModal();
 configurarQrPagina();
 atualizarCronometros();
 setInterval(atualizarCronometros, 1000);
+                                            
