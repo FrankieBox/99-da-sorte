@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,7 +13,7 @@
   />
   <link rel="stylesheet" href="concursos-99.css" />
 </head>
-<body>
+<body class="notranslate">
   <div class="cyber-shell">
     <!-- TOPBAR -->
     <header class="cyber-topbar">
@@ -27,7 +27,7 @@
       </div>
     </header>
 
-    <!-- HERO + VEÍCULO ESTILO VELOZES E FURIOSOS EM CENÁRIO URBANO -->
+    <!-- HERO + KWID TUNADO -->
     <section class="cyber-hero">
       <p class="hero-eyebrow">// CIRCUITO URBANO DE CONCURSOS</p>
       <h1 class="hero-title">ACELERE SUA SORTE <span>A CADA HORA</span></h1>
@@ -84,6 +84,33 @@
       </div>
     </section>
 
+    <!-- CONSULTA DE BILHETE POR ID -->
+    <section id="consulta-bilhete" class="cyber-section">
+      <div class="section-head">
+        <div>
+          <span class="section-tag">// CONFERÊNCIA RÁPIDA</span>
+          <h2 class="section-title">CONSULTAR BILHETE POR ID</h2>
+        </div>
+        <span class="rule-badge">AO VIVO</span>
+      </div>
+
+      <p class="section-desc">
+        Digite o código/ID do seu bilhete para conferir o dia, o horário do concurso e o resultado oficial.
+      </p>
+
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input
+          type="text"
+          id="input-consulta-id"
+          placeholder="Ex: VND-173262..."
+          style="flex:1;padding:10px 11px;background:#050811;border:1px solid rgba(56,189,248,0.28);color:#fff;font-family:'Rajdhani',sans-serif;font-size:0.95rem;"
+        />
+        <button type="button" id="btn-consulta-id" class="btn-cyber-mini">BUSCAR</button>
+      </div>
+
+      <p id="resultado-consulta-id" class="modal-feedback" style="color:#38bdf8;"></p>
+    </section>
+
     <!-- REGRAS -->
     <section class="cyber-section">
       <div class="section-head">
@@ -134,7 +161,7 @@
     <footer class="cyber-footer">
       <div class="footer-info">
         <h3>99 DA SORTE</h3>
-        <p>Compartilhe com seus amigos e, para os passageiros que já conhecem, divulgue o QR Code ao lado.</p>
+        <p>Compartilhe com seus amigos e, para quem já conhece, divulgue o QR Code ao lado.</p>
         <div class="footer-links">
           <span>● 08:10 às 19:10 • 19:45 • 20:50 • 21:10</span>
           <span>● Modalidade Oficial: Dezena (DZ)</span>
