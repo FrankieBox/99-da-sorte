@@ -8,8 +8,13 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Garante que arquivos estáticos na raiz do projeto sejam encontrados
 const RAIZ = __dirname;
+const PUBLIC_DIR = path.join(RAIZ, 'public');
+
+// Serve arquivos estáticos de public/ e, se houver, da raiz
+if (fs.existsSync(PUBLIC_DIR)) {
+  app.use(express.static(PUBLIC_DIR));
+}
 app.use(express.static(RAIZ));
 
 const DATA_DIR = path.join(RAIZ, 'data');
@@ -79,16 +84,28 @@ function gerarPayloadPixProvisorio(chave, nome, valor, txid) {
   return `00020126580014BR.GOV.BCB.PIX0136${chave}520400005303986540${valorStr.length}${valorStr}5802BR5925${nome.substring(0, 25)}6009SAO PAULO62140510${txid}6304ABCD`;
 }
 
+function resolverArquivoHtml(nomeArquivo) {
+  const noPublic = path.join(PUBLIC_DIR, nomeArquivo);
+  if (fs.existsSync(noPublic)) return noPublic;
+
+  const naRaiz = path.join(RAIZ, nomeArquivo);
+  if (fs.existsSync(naRaiz)) return naRaiz;
+
+  return null;
+}
+
 function enviarHtmlSeguro(res, nomeArquivo) {
-  const caminho = path.join(RAIZ, nomeArquivo);
-  if (fs.existsSync(caminho)) {
+  const caminho = resolverArquivoHtml(nomeArquivo);
+  if (caminho) {
     return res.sendFile(caminho);
   }
+  const listaPublic = fs.existsSync(PUBLIC_DIR) ? fs.readdirSync(PUBLIC_DIR).join(', ') : '(pasta public inexistente)';
+  const listaRaiz = fs.readdirSync(RAIZ).join(', ');
   return res.status(404).send(`
     <body style="background:#050a14;color:#fff;font-family:sans-serif;padding:24px;">
-      <h2>Arquivo ${nomeArquivo} não encontrado na raiz</h2>
-      <p>Verifique se <strong>${nomeArquivo}</strong> está na mesma pasta do <code>server.js</code> no GitHub.</p>
-      <p>Arquivos na raiz: ${fs.readdirSync(RAIZ).join(', ')}</p>
+      <h2>Arquivo ${nomeArquivo} não encontrado</h2>
+      <p>Na raiz: ${listaRaiz}</p>
+      <p>Em public/: ${listaPublic}</p>
     </body>
   `);
 }
