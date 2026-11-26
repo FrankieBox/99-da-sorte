@@ -21,14 +21,17 @@ const DEZENAS_100 = [
   '00'
 ];
 
-// Gancho preparado para o futuro gerenciador de resultados automáticos por horário
-const RESULTADOS_CONCURSOS = {};
+// Interruptor rápido para ligar/desligar o time de agentes de aquecimento
+let AGENTE_AQUECIMENTO_ATIVO = true;
 
-// Gancho reservado para ativar futuramente os balões de agentes de aquecimento no modal
-const AGENTE_AQUECIMENTO_CONFIG = {
-  ativo: false,
-  agentes: []
-};
+const AGENTES_PADRAO = [
+  { id: 'AGT-01', nome: 'Lucas M.', regiao: 'Zona Sul', dezenasPreferidas: ['27', '07', '77'], ativo: true },
+  { id: 'AGT-02', nome: 'Camila R.', regiao: 'Centro', dezenasPreferidas: ['14', '24', '88'], ativo: true },
+  { id: 'AGT-03', nome: 'Rafael S.', regiao: 'Zona Leste', dezenasPreferidas: ['03', '33', '69'], ativo: true },
+  { id: 'AGT-04', nome: 'Beatriz F.', regiao: 'Zona Norte', dezenasPreferidas: ['19', '45', '00'], ativo: true },
+  { id: 'AGT-05', nome: 'Diego T.', regiao: 'Zona Oeste', dezenasPreferidas: ['11', '52', '91'], ativo: true },
+  { id: 'AGT-06', nome: 'Aline C.', regiao: 'Centro', dezenasPreferidas: ['08', '22', '64'], ativo: true }
+];
 
 const CONCURSOS = HORARIOS_CONCURSOS.map((horario, idx) => ({
   id: `C-${String(idx + 1).padStart(2, '0')}`,
@@ -54,6 +57,7 @@ const modalCodigoEl = document.getElementById('modal-codigo');
 const modalTituloEl = document.getElementById('modal-titulo');
 const modalCronometroEl = document.getElementById('modal-cronometro');
 const modalUltimoResultadoEl = document.getElementById('modal-ultimo-resultado');
+const slotAgentesEl = document.getElementById('slot-agentes-futuro');
 const modalDezenaDisplayEl = document.getElementById('modal-dezena-display');
 const btnModalSurpresinhaEl = document.getElementById('btn-modal-surpresinha');
 const modalGradeDzEl = document.getElementById('modal-grade-dz');
@@ -62,10 +66,22 @@ const modalNomeEl = document.getElementById('modal-nome');
 const modalWhatsappEl = document.getElementById('modal-whatsapp');
 const modalFeedbackEl = document.getElementById('modal-feedback');
 
+const inputConsultaIdEl = document.getElementById('input-consulta-id');
+const btnConsultaIdEl = document.getElementById('btn-consulta-id');
+const resultadoConsultaIdEl = document.getElementById('resultado-consulta-id');
+
 let concursoAtivo = null;
 let dezenaSelecionada = '';
 let idProximoGlobal = CONCURSOS[0].id;
 let posicaoInicialAjustada = false;
+
+let resultadosPorHorario = {};
+let catalogoAgentes = [...AGENTES_PADRAO];
+let intervaloMinMs = 8000;
+let intervaloMaxMs = 16000;
+let timerAgenteId = null;
+let ultimoAgenteId = '';
+let ultimaDezenaAgente = '';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -78,20 +94,6 @@ function formatarDuracao(ms) {
   const s = totalSeg % 60;
   return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
-
-function formatarTelefone(valor) {
-  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 11);
-  if (digitos.length <= 2) return digitos ? `(${digitos}` : '';
-  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
-  if (digitos.length <= 10) {
-    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
-  }
-  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
-}
-
-modalWhatsappEl.addEventListener('input', () => {
-  modalWhatsappEl.value = formatarTelefone(modalWhatsappEl.value);
-});
 
 function calcularProximoAlvo(horarioStr, agora) {
   const [hh, mm] = horarioStr.split(':').map(Number);
@@ -281,6 +283,112 @@ function atualizarCronometros() {
   }
 }
 
+async function carregarResultados() {
+  try {
+    const res = await fetch('/api/resultados');
+    if (!res.ok) return;
+    const data = await res.json();
+    resultadosPorHorario = data.ultimoPorHorario || {};
+    if (concursoAtivo) {
+      atualizarBlocoResultadoModal(concursoAtivo.horario);
+    }
+  } catch (e) {
+    // Mantém estado atual em caso de falha de rede
+  }
+}
+
+function atualizarBlocoResultadoModal(horario) {
+  if (!modalUltimoResultadoEl) return;
+  const resHorario = resultadosPorHorario[horario];
+  if (resHorario && resHorario.dezena) {
+    modalUltimoResultadoEl.textContent = `Dezena ${resHorario.dezena} • Grupo ${resHorario.grupo}`;
+  } else {
+    modalUltimoResultadoEl.textContent = 'Aguardando apuração';
+  }
+}
+
+async function carregarConfigAgentes() {
+  try {
+    const res = await fetch('/api/agentes');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    if (typeof cfg.ativoGlobal === 'boolean') {
+      AGENTE_AQUECIMENTO_ATIVO = cfg.ativoGlobal;
+    }
+    if (Array.isArray(cfg.agentes) && cfg.agentes.length > 0) {
+      catalogoAgentes = cfg.agentes.filter(a => a.ativo !== false);
+    }
+    if (cfg.intervaloMinSegundos) {
+      intervaloMinMs = Number(cfg.intervaloMinSegundos) * 1000;
+    }
+    if (cfg.intervaloMaxSegundos) {
+      intervaloMaxMs = Math.max(intervaloMinMs + 1000, Number(cfg.intervaloMaxSegundos) * 1000);
+    }
+  } catch (e) {
+    catalogoAgentes = AGENTES_PADRAO.filter(a => a.ativo !== false);
+  }
+}
+
+function escolherDezenaAgente(agente) {
+  const poolPrefs = Array.isArray(agente.dezenasPreferidas)
+    ? agente.dezenasPreferidas.filter(d => DEZENAS_100.includes(d) && d !== ultimaDezenaAgente)
+    : [];
+
+  let escolhida = '';
+  if (poolPrefs.length > 0 && Math.random() < 0.7) {
+    escolhida = poolPrefs[Math.floor(Math.random() * poolPrefs.length)];
+  } else {
+    const alternativas = DEZENAS_100.filter(d => d !== ultimaDezenaAgente);
+    escolhida = alternativas[Math.floor(Math.random() * alternativas.length)];
+  }
+
+  ultimaDezenaAgente = escolhida;
+  return escolhida;
+}
+
+function exibirBalaoAgente() {
+  if (!slotAgentesEl || !concursoAtivo || !AGENTE_AQUECIMENTO_ATIVO || catalogoAgentes.length === 0) {
+    return;
+  }
+
+  const candidatos = catalogoAgentes.filter(a => a.id !== ultimoAgenteId);
+  const lista = candidatos.length > 0 ? candidatos : catalogoAgentes;
+  const agente = lista[Math.floor(Math.random() * lista.length)];
+  ultimoAgenteId = agente.id;
+
+  const dezena = escolherDezenaAgente(agente);
+  slotAgentesEl.innerHTML = `
+    <div class="balao-agente-toast" style="padding:8px 12px;border-radius:10px;background:rgba(16,32,56,0.92);border:1px solid rgba(163,230,53,0.45);color:#f8fafc;font-size:0.82rem;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span><strong>${agente.nome}</strong> • ${agente.regiao} garantiu a dezena <strong style="color:#a3e635;">${dezena}</strong></span>
+      <span style="opacity:0.75;font-size:0.74rem;">${concursoAtivo.horario}</span>
+    </div>
+  `;
+}
+
+function agendarProximoBalaoAgente() {
+  limparAgentesModal();
+  if (!concursoAtivo || !AGENTE_AQUECIMENTO_ATIVO) return;
+
+  const delay =
+    intervaloMinMs + Math.floor(Math.random() * Math.max(1000, intervaloMaxMs - intervaloMinMs));
+
+  timerAgenteId = setTimeout(() => {
+    if (!concursoAtivo || !AGENTE_AQUECIMENTO_ATIVO) return;
+    exibirBalaoAgente();
+    agendarProximoBalaoAgente();
+  }, delay);
+}
+
+function limparAgentesModal() {
+  if (timerAgenteId) {
+    clearTimeout(timerAgenteId);
+    timerAgenteId = null;
+  }
+  if (slotAgentesEl) {
+    slotAgentesEl.innerHTML = '';
+  }
+}
+
 function montarGradeModal() {
   modalGradeDzEl.innerHTML = DEZENAS_100.map(
     dz => `<button type="button" class="cyber-dz-btn" data-dz="${dz}">${dz}</button>`
@@ -301,30 +409,27 @@ function selecionarDezena(dz) {
   });
 }
 
-function salvarRascunhoLocal(payload) {
-  try {
-    const chave = 'rascunhos_concursos_99';
-    const lista = JSON.parse(localStorage.getItem(chave) || '[]');
-    lista.unshift({ ...payload, criadoEm: new Date().toISOString() });
-    localStorage.setItem(chave, JSON.stringify(lista.slice(0, 50)));
-  } catch (_) {}
-}
-
 function abrirModalConcurso(concurso) {
   concursoAtivo = concurso;
   dezenaSelecionada = '';
   modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
   modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
-  modalUltimoResultadoEl.textContent = RESULTADOS_CONCURSOS[concurso.horario] || 'Aguardando apuração';
   modalFeedbackEl.textContent = '';
   modalFeedbackEl.className = 'modal-feedback';
   selecionarDezena('');
+  atualizarBlocoResultadoModal(concurso.horario);
   atualizarCronometros();
   modalEl.classList.remove('oculto');
+
+  if (AGENTE_AQUECIMENTO_ATIVO) {
+    exibirBalaoAgente();
+    agendarProximoBalaoAgente();
+  }
 }
 
 function fecharModalConcurso() {
   concursoAtivo = null;
+  limparAgentesModal();
   modalEl.classList.add('oculto');
 }
 
@@ -340,6 +445,33 @@ btnModalSurpresinhaEl.addEventListener('click', () => {
   modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
 });
 
+async function consultarBilhetePorId() {
+  if (!inputConsultaIdEl || !resultadoConsultaIdEl) return;
+  const id = inputConsultaIdEl.value.trim();
+  if (!id) {
+    resultadoConsultaIdEl.textContent = 'Digite o ID do bilhete para consultar.';
+    return;
+  }
+
+  resultadoConsultaIdEl.textContent = 'Consultando bilhete...';
+  const res = await fetch(`/api/bilhete/${encodeURIComponent(id)}`);
+  const data = await res.json();
+
+  if (!res.ok) {
+    resultadoConsultaIdEl.textContent = data.erro || 'Bilhete não encontrado.';
+    return;
+  }
+
+  const selFmt = Array.isArray(data.selecao) ? data.selecao.join(' • ') : data.selecao;
+  resultadoConsultaIdEl.textContent =
+    `ID ${data.id} • Dia ${data.data} • Concurso ${data.horarioConcurso} • ` +
+    `${data.modalidade} ${selFmt} • ${data.statusApuracao}`;
+}
+
+if (btnConsultaIdEl) {
+  btnConsultaIdEl.addEventListener('click', consultarBilhetePorId);
+}
+
 formConcursoIndividualEl.addEventListener('submit', async e => {
   e.preventDefault();
   if (!concursoAtivo) return;
@@ -350,46 +482,35 @@ formConcursoIndividualEl.addEventListener('submit', async e => {
     return;
   }
 
-  const payload = {
-    produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
-    horario: concursoAtivo.horario,
-    modalidade: 'DZ',
-    selecao: dezenaSelecionada,
-    valor: concursoAtivo.valorBilhete,
-    lead: {
-      nome: modalNomeEl.value.trim(),
-      contato: modalWhatsappEl.value.trim()
-    }
-  };
-
   modalFeedbackEl.className = 'modal-feedback';
   modalFeedbackEl.textContent = 'Conectando ao checkout...';
 
-  try {
-    const res = await fetch('/api/checkout/criar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  const res = await fetch('/api/checkout/criar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
+      modalidade: 'DZ',
+      horarioConcurso: concursoAtivo.horario,
+      selecao: dezenaSelecionada,
+      valor: concursoAtivo.valorBilhete,
+      lead: {
+        nome: modalNomeEl.value.trim(),
+        contato: modalWhatsappEl.value.trim()
+      }
+    })
+  });
 
-    const data = await res.json();
-    if (!res.ok) {
-      salvarRascunhoLocal(payload);
-      modalFeedbackEl.className = 'modal-feedback erro';
-      modalFeedbackEl.textContent =
-        data.erro ||
-        `Dezena ${dezenaSelecionada} (${concursoAtivo.horario}) salva localmente enquanto o checkout é ativado.`;
-      return;
-    }
-
-    if (data.checkout_url) {
-      window.location.href = data.checkout_url;
-    }
-  } catch (_) {
-    salvarRascunhoLocal(payload);
+  const data = await res.json();
+  if (!res.ok) {
     modalFeedbackEl.className = 'modal-feedback erro';
-    modalFeedbackEl.textContent = `Dezena ${dezenaSelecionada} (${concursoAtivo.horario}) salva localmente para conferência.`;
+    modalFeedbackEl.textContent =
+      data.erro ||
+      `Bilhete Dezena ${dezenaSelecionada} (Concurso ${concursoAtivo.horario}) registrado em modo pré-checkout enquanto o banco é finalizado.`;
+    return;
   }
+
+  window.location.href = data.checkout_url;
 });
 
 function configurarQrPagina() {
@@ -401,5 +522,7 @@ construirCarrossel();
 montarGradeModal();
 configurarQrPagina();
 atualizarCronometros();
+carregarResultados();
+carregarConfigAgentes();
 setInterval(atualizarCronometros, 1000);
-    
+setInterval(carregarResultados, 20000);
