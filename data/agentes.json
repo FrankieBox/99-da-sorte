@@ -1,0 +1,49 @@
+{
+  "ativoGlobal": true,
+  "intervaloMinSegundos": 8,
+  "intervaloMaxSegundos": 16,
+  "agentes": [
+    {
+      "id": "AGT-01",
+      "nome": "Lucas M.",
+      "regiao": "Zona Sul",
+      "dezenasPreferidas": ["27", "07", "77"],
+      "ativo": true
+    },
+    {
+      "id": "AGT-02",
+      "nome": "Camila R.",
+      "regiao": "Centro",
+      "dezenasPreferidas": ["14", "24", "88"],
+      "ativo": true
+    },
+    {
+      "id": "AGT-03",
+      "nome": "Rafael S.",
+      "regiao": "Zona Leste",
+      "dezenasPreferidas": ["03", "33", "69"],
+      "ativo": true
+    },
+    {
+      "id": "AGT-04",
+      "nome": "Beatriz F.",
+      "regiao": "Zona Norte",
+      "dezenasPreferidas": ["19", "45", "00"],
+      "ativo": true
+    },
+    {
+      "id": "AGT-05",
+      "nome": "Diego T.",
+      "regiao": "Zona Oeste",
+      "dezenasPreferidas": ["11", "52", "91"],
+      "ativo": true
+    },
+    {
+      "id": "AGT-06",
+      "nome": "Aline C.",
+      "regiao": "Centro",
+      "dezenasPreferidas": ["08", "22", "64"],
+      "ativo": true
+    }
+  ]
+}
