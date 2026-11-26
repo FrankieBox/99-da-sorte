@@ -1,20 +1,19 @@
 let estadoApp = {
   concursos: [],
-  atividadeRecente: []
+  atividadeRecente: [],
+  agentesConfig: {
+    ativoGlobal: true,
+    intervaloMinSegundos: 8,
+    intervaloMaxSegundos: 16,
+    agentes: []
+  }
 };
 
 let concursoSelecionado = null;
 let dezenaSelecionada = null;
 let intervaloCronometro = null;
+let timerBalao = null;
 let indiceBalao = 0;
-
-const agentesExemplo = [
-  { nome: 'Patrícia S. (Vila Nova)', horario: '08:10', dezena: '68' },
-  { nome: 'Carlos M. (Centro)', horario: '10:10', dezena: '14' },
-  { nome: 'Fernanda R. (Jardim)', horario: '12:10', dezena: '00' },
-  { nome: 'Lucas T. (Bela Vista)', horario: '14:10', dezena: '27' },
-  { nome: 'Juliana A. (Estação)', horario: '18:10', dezena: '83' }
-];
 
 document.addEventListener('DOMContentLoaded', () => {
   gerarGridDezenas();
@@ -23,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarEventos();
 
   setInterval(carregarEstadoServidor, 15000);
-  setInterval(rotacionarBalaoAgente, 4500);
+  agendarProximoBalao();
 });
 
 function configurarQrCodeRodape() {
@@ -38,8 +37,12 @@ async function carregarEstadoServidor() {
   try {
     const resp = await fetch('/api/estado');
     const dados = await resp.json();
-    estadoApp = dados;
+    estadoApp = {
+      ...estadoApp,
+      ...dados
+    };
     renderizarGradeConcursos();
+    rotacionarBalaoAgente();
 
     if (concursoSelecionado) {
       const atualizado = estadoApp.concursos.find(c => c.id === concursoSelecionado.id);
@@ -113,6 +116,7 @@ window.abrirModalConcurso = function (concursoId) {
   document.getElementById('modal-concurso-tag').textContent = `CONCURSO #${concurso.numero} • GRADE HORÁRIA`;
   document.getElementById('modal-horario').textContent = concurso.horario;
   atualizarTextoResultadoModal(concurso);
+  rotacionarBalaoAgente();
 
   iniciarCronometro(concurso.horario);
   document.getElementById('modal-sorteio').classList.remove('hidden');
@@ -152,16 +156,51 @@ function iniciarCronometro(horarioStr) {
   intervaloCronometro = setInterval(atualizar, 1000);
 }
 
-function rotacionarBalaoAgente() {
-  const listaReal = estadoApp.atividadeRecente && estadoApp.atividadeRecente.length > 0
-    ? estadoApp.atividadeRecente.map(a => ({
-        nome: `${a.nome} (${a.bairro})`,
-        horario: a.horario,
-        dezena: a.dezena
-      }))
-    : agentesExemplo;
+function montarListaBaloes() {
+  if (estadoApp.atividadeRecente && estadoApp.atividadeRecente.length > 0) {
+    return estadoApp.atividadeRecente.map(a => ({
+      nome: `${a.nome} (${a.bairro})`,
+      horario: a.horario,
+      dezena: a.dezena
+    }));
+  }
 
-  const item = listaReal[indiceBalao % listaReal.length];
+  const cfg = estadoApp.agentesConfig || {};
+  if (cfg.ativoGlobal === false) return [];
+
+  const ativos = Array.isArray(cfg.agentes)
+    ? cfg.agentes.filter(ag => ag.ativo !== false)
+    : [];
+
+  const horarios = estadoApp.concursos.length > 0
+    ? estadoApp.concursos.map(c => c.horario)
+    : ['08:10', '10:10', '14:10', '18:10'];
+
+  return ativos.map((ag, idx) => {
+    const prefs = Array.isArray(ag.dezenasPreferidas) && ag.dezenasPreferidas.length > 0
+      ? ag.dezenasPreferidas
+      : ['00'];
+    const dz = prefs[idx % prefs.length];
+    const horario = (concursoSelecionado && concursoSelecionado.horario) || horarios[idx % horarios.length];
+    return {
+      nome: `${ag.nome} (${ag.regiao})`,
+      horario,
+      dezena: dz
+    };
+  });
+}
+
+function rotacionarBalaoAgente() {
+  const slot = document.getElementById('slot-agentes-futuro');
+  const lista = montarListaBaloes();
+
+  if (!lista || lista.length === 0) {
+    if (slot) slot.classList.add('hidden');
+    return;
+  }
+
+  if (slot) slot.classList.remove('hidden');
+  const item = lista[indiceBalao % lista.length];
   indiceBalao++;
 
   const elNome = document.getElementById('wa-nome');
@@ -173,6 +212,19 @@ function rotacionarBalaoAgente() {
     elAcao.textContent = `reservou no sorteio das ${item.horario}`;
     elDz.textContent = `DZ ${item.dezena}`;
   }
+}
+
+function agendarProximoBalao() {
+  if (timerBalao) clearTimeout(timerBalao);
+  const cfg = estadoApp.agentesConfig || {};
+  const minSeg = Number(cfg.intervaloMinSegundos) > 0 ? Number(cfg.intervaloMinSegundos) : 8;
+  const maxSeg = Number(cfg.intervaloMaxSegundos) >= minSeg ? Number(cfg.intervaloMaxSegundos) : 16;
+  const delayMs = (Math.floor(Math.random() * (maxSeg - minSeg + 1)) + minSeg) * 1000;
+
+  timerBalao = setTimeout(() => {
+    rotacionarBalaoAgente();
+    agendarProximoBalao();
+  }, delayMs);
 }
 
 function configurarEventos() {
