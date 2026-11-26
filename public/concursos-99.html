@@ -1,64 +1,65 @@
 <!DOCTYPE html>
-<html lang="pt-BR" translate="no">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google" content="notranslate" />
-  <title>99 da sorte — Concursos Diários 9:16</title>
+  <title>99 da sorte — Concursos Diários</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="concursos-99.css" />
 </head>
-<body class="notranslate">
+<body>
   <div class="cyber-shell">
+    <!-- TOPBAR -->
     <header class="cyber-topbar">
       <div class="cyber-brand">
         <span class="cyber-badge-99">99</span>
-        <span class="cyber-brand-text">99 DA SORTE // TURBO GRID</span>
+        <span class="cyber-brand-text">DA SORTE • TURBO</span>
       </div>
       <div class="cyber-live-pill">
         <span class="pulse-dot"></span>
-        <span>AO VIVO</span>
+        <span>15 CONCURSOS</span>
       </div>
     </header>
 
+    <!-- HERO + VEÍCULO ESTILO VELOZES E FURIOSOS EM CENÁRIO URBANO -->
     <section class="cyber-hero">
-      <div class="hero-media-frame">
+      <p class="hero-eyebrow">// CIRCUITO URBANO DE CONCURSOS</p>
+      <h1 class="hero-title">ACELERE SUA SORTE <span>A CADA HORA</span></h1>
+      <p class="hero-subtitle">
+        Concursos diários na modalidade <strong>Dezena (DZ)</strong> com bilhete a partir de
+        <strong>R$ 2,50</strong> e cronômetros ao vivo.
+      </p>
+
+      <a href="#grade-concursos" class="btn-cyber-primary" id="btn-ir-proximo">
+        <span>VER PRÓXIMO CONCURSO</span>
+        <span>➔</span>
+      </a>
+
+      <div class="hero-car-stage">
+        <div class="car-hud-tag">
+          <span class="hud-code">MODO DZ • 01 A 00</span>
+          <span class="hud-price">BILHETE R$ 2,50</span>
+        </div>
         <img
-          id="hero-kwid-img"
           src="kwid-99.jpg"
-          alt="Renault Kwid tunado estilo Velozes e Furiosos 99 da sorte"
-          onerror="this.parentElement.classList.add('sem-imagem')"
+          alt="Veículo tunado estilo corrida urbana com detalhes 99 em cenário noturno"
+          class="hero-car-img"
+          onerror="this.style.display='none'"
         />
-        <div class="hero-media-overlay"></div>
-
-        <div class="hero-overlay-top">
-          <span class="hud-chip">MOD: DEZENA (01–00)</span>
-          <span class="hud-chip lime">BILHETE R$ 2,50</span>
-        </div>
-
-        <div class="hero-overlay-bottom">
-          <div class="hero-eyebrow">EDIÇÃO URBANA • PASSAGEIROS 99</div>
-          <h1 class="hero-title">
-            DESAFIE<br />
-            <span>OS LIMITES</span>
-          </h1>
-          <p class="hero-subtitle">
-            Escolha um concurso no carrossel abaixo, marque sua dezena e concorra por apenas <strong>R$ 2,50</strong>.
-          </p>
-          <a href="#secao-concursos" class="btn-cyber-primary">
-            <span>ESCOLHER CONCURSO</span>
-            <span class="btn-arrow">➔</span>
-          </a>
-        </div>
       </div>
     </section>
 
-    <section id="secao-concursos" class="cyber-section">
+    <!-- CARROSSEL DE CONCURSOS DIÁRIOS -->
+    <section id="grade-concursos" class="cyber-section">
       <div class="section-head">
         <div>
-          <span class="section-tag">// CARROSSEL DIÁRIO</span>
+          <span class="section-tag">// GRADE DIÁRIA</span>
           <h2 class="section-title">CONCURSOS DO DIA</h2>
         </div>
         <div class="clock-now-box">
@@ -67,92 +68,90 @@
         </div>
       </div>
 
-      <div class="carousel-controls-bar">
-        <span class="carousel-hint">Arraste para o lado ou use as setas • Toque no card</span>
-        <div class="carousel-nav-btns">
-          <button type="button" id="btn-prev-slide" class="btn-nav-slide" aria-label="Anterior">◀</button>
-          <button type="button" id="btn-next-slide" class="btn-nav-slide" aria-label="Próximo">▶</button>
-        </div>
+      <p class="section-desc">
+        Arraste ou use as setas para navegar pelos horários (08:10 às 19:10 + 19:45, 20:50 e 21:10).
+        Toque em um concurso para abrir o painel individual.
+      </p>
+
+      <div class="carousel-controls">
+        <button type="button" class="carousel-arrow" id="btn-prev-slide" aria-label="Anterior">◀</button>
+        <span class="carousel-indicador" id="carousel-indicador">Concurso #01 de 15</span>
+        <button type="button" class="carousel-arrow" id="btn-next-slide" aria-label="Próximo">▶</button>
       </div>
 
-      <div id="carousel-viewport" class="carousel-viewport">
-        <div id="carousel-track" class="carousel-track"></div>
-      </div>
-
-      <div class="carousel-footer-info">
-        <span id="carousel-indicador">Concurso #01 de 15</span>
-        <button type="button" id="btn-ir-proximo" class="btn-jump-next">
-          ⚡ IR PARA O PRÓXIMO SORTEIO
-        </button>
+      <div class="carousel-viewport" id="carousel-viewport">
+        <div class="carousel-track" id="carousel-track"></div>
       </div>
     </section>
 
+    <!-- REGRAS -->
     <section class="cyber-section">
       <div class="section-head">
         <div>
-          <span class="section-tag">// REGULAMENTO</span>
-          <h2 class="section-title">REGRAS GERAIS</h2>
+          <span class="section-tag">// REGULAMENTO BASE</span>
+          <h2 class="section-title">COMO FUNCIONA</h2>
         </div>
-        <span class="rule-badge">PADRÃO TODOS OS HORÁRIOS</span>
+        <span class="rule-badge">REGRA ÚNICA</span>
       </div>
 
       <div class="rules-panel">
         <div class="rule-item">
           <span class="rule-num">01</span>
-          <p><strong>Modalidade única nesta fase:</strong> Dezena (<code>DZ</code>) de <code>01</code> a <code>99</code> e <code>00</code>, com 100 opções por concurso (chance base de <strong>1 em 100</strong> por bilhete).</p>
+          <p><strong>Escolha seu horário:</strong> cada concurso tem contagem regressiva própria até o horário programado.</p>
         </div>
         <div class="rule-item">
           <span class="rule-num">02</span>
-          <p><strong>Valor e horários:</strong> Bilhete fixo em <strong>R$ 2,50</strong>. Sorteios de hora em hora das 08:10 às 19:10, mais 19:45, 20:50 e 21:10.</p>
+          <p><strong>Selecione sua Dezena (DZ):</strong> escolha 1 número de <code>01</code> a <code>99</code> ou <code>00</code> (100 combinações possíveis por bilhete).</p>
         </div>
         <div class="rule-item">
           <span class="rule-num">03</span>
-          <p><strong>Apuração e contato:</strong> Cada horário possui seu próprio ciclo diário e o contato com o contemplado é feito pelo WhatsApp informado.</p>
+          <p><strong>Confirmação e contato:</strong> informe seu nome e WhatsApp para registrarmos sua participação e falarmos com você em caso de premiação.</p>
         </div>
       </div>
     </section>
 
+    <!-- MÉTRICAS -->
     <section class="cyber-metrics">
       <div class="metric-card">
         <strong>15</strong>
-        <span>HORÁRIOS / DIA</span>
+        <span>SORTEIOS / DIA</span>
+      </div>
+      <div class="metric-card highlight-lime">
+        <strong>R$ 2,50</strong>
+        <span>VALOR DO BILHETE</span>
       </div>
       <div class="metric-card">
         <strong>100</strong>
-        <span>DEZENAS / GRADE</span>
+        <span>DEZENAS (01–00)</span>
       </div>
       <div class="metric-card">
-        <strong>R$ 2,50</strong>
-        <span>BILHETE ÚNICO</span>
-      </div>
-      <div class="metric-card highlight-lime">
-        <strong>PIX</strong>
-        <span>PAGAMENTO RÁPIDO</span>
+        <strong>1 EM 100</strong>
+        <span>CHANCE POR DZ</span>
       </div>
     </section>
 
+    <!-- RODAPÉ + QR CODE -->
     <footer class="cyber-footer">
       <div class="footer-info">
-        <span class="section-tag">// CENTRAL 99 DA SORTE</span>
-        <h3>CONECTE-SE &amp; ACOMPANHE</h3>
-        <p>Escaneie o QR Code ao lado ou compartilhe o link da grade diária com seus passageiros.</p>
+        <h3>99 DA SORTE</h3>
+        <p>Compartilhe com seus amigos e, para os passageiros que já conhecem, divulgue o QR Code ao lado.</p>
         <div class="footer-links">
-          <span>● Grade 08:10 às 21:10</span>
-          <span>● Edição Passageiros 99</span>
+          <span>● 08:10 às 19:10 • 19:45 • 20:50 • 21:10</span>
+          <span>● Modalidade Oficial: Dezena (DZ)</span>
         </div>
       </div>
-
       <div class="footer-qr-box">
-        <img id="qr-pagina" src="" alt="QR Code 99 da sorte" />
-        <span class="qr-label">SCAN ME!</span>
+        <img id="qr-pagina" alt="QR Code da página 99 da sorte" />
+        <span class="qr-label">QR CODE</span>
       </div>
     </footer>
 
     <div class="cyber-ticker">
-      <span>★ 99 DA SORTE // CONCURSOS DIÁRIOS ★ 08:10 ÀS 21:10 ★ BILHETE R$ 2,50 ★</span>
+      99 DA SORTE • CIRCUITO DIÁRIO DE DEZENAS • CONCURSOS AUTOMATIZADOS
     </div>
   </div>
 
+  <!-- MODAL DO CONCURSO INDIVIDUAL -->
   <div id="modal-concurso" class="cyber-modal oculto" role="dialog" aria-modal="true">
     <div class="cyber-modal-card">
       <div class="modal-top">
@@ -160,40 +159,37 @@
           <span class="modal-tag" id="modal-codigo">CONCURSO #01</span>
           <h3 id="modal-titulo">SORTEIO 08:10</h3>
         </div>
-        <button type="button" id="btn-fechar-modal" class="btn-modal-close">✕</button>
+        <button type="button" class="btn-modal-close" id="btn-fechar-modal" aria-label="Fechar">✕</button>
       </div>
 
       <div class="modal-timer-bar">
-        <span>TEMPO RESTANTE:</span>
-        <strong id="modal-cronometro">00:00:00</strong>
+        <span>FECHAMENTO EM:</span>
+        <strong id="modal-cronometro">--:--:--</strong>
       </div>
 
-      <div class="modal-resultado-box" id="modal-resultado-box">
-        <span>ÚLTIMO RESULTADO DO HORÁRIO:</span>
+      <div class="modal-result-bar">
+        <span>ÚLTIMO RESULTADO:</span>
         <strong id="modal-ultimo-resultado">Aguardando apuração</strong>
       </div>
 
-      <!-- ESPAÇO RESERVADO PARA BALÕES DE AGENTES DE AQUECIMENTO (FUTURO) -->
-      <div id="slot-agentes-futuro" class="social-proof-slot" data-social-proof-slot="reservado"></div>
+      <div id="slot-agentes-futuro" class="social-proof-slot"></div>
 
       <div class="modal-visor-row">
         <div class="modal-visor">
-          <span>DEZENA ESCOLHIDA (01–00)</span>
+          <span>DEZENA ESCOLHIDA (DZ)</span>
           <strong id="modal-dezena-display">--</strong>
         </div>
-        <button type="button" id="btn-modal-surpresinha" class="btn-cyber-mini">
-          🎲 SURPRESINHA
-        </button>
+        <button type="button" class="btn-cyber-mini" id="btn-modal-surpresinha">🎲 SURPRESINHA</button>
       </div>
 
       <div id="modal-grade-dz" class="modal-dz-grid"></div>
 
       <form id="form-concurso-individual" class="modal-form">
         <input type="text" id="modal-nome" placeholder="Seu nome completo" required />
-        <input type="text" id="modal-whatsapp" placeholder="(11) 99999-9999" required />
+        <input type="tel" id="modal-whatsapp" placeholder="Seu WhatsApp (com DDD)" required />
         <button type="submit" class="btn-cyber-primary full">
           <span>RESERVAR BILHETE • R$ 2,50</span>
-          <span class="btn-arrow">➔</span>
+          <span>➔</span>
         </button>
       </form>
 
