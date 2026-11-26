@@ -1,12 +1,11 @@
 {
   "name": "99-da-sorte",
-  "version": "1.4.0",
-  "description": "99 da sorte — Terminal de vendas, simulador, BD JSON, base de landing pages e checkout InfinitePay",
+  "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.1"
+    "express": "^4.21.0"
   }
 }
