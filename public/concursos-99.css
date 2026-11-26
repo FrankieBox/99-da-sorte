@@ -1,832 +1,470 @@
-:root {
-  --bg-void: #05070d;
-  --bg-panel: #0b1020;
-  --bg-card: #0e152b;
-  --cobalt: #1d4ed8;
-  --cyan-neon: #38bdf8;
-  --lime: #b8ff00;
-  --lime-dark: #071100;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-tech: rgba(56, 189, 248, 0.28);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  background: radial-gradient(circle at top, #0c1738 0%, #03050a 65%);
-  color: var(--text-main);
-  font-family: "Rajdhani", system-ui, -apple-system, sans-serif;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-}
-
-.cyber-shell {
-  width: 100%;
-  max-width: 480px;
-  min-height: 100vh;
-  background: var(--bg-void);
-  border-left: 1px solid rgba(184, 255, 0, 0.2);
-  border-right: 1px solid rgba(184, 255, 0, 0.2);
-  box-shadow: 0 0 40px rgba(29, 78, 216, 0.25);
-  overflow-x: hidden;
-  position: relative;
-}
-
-/* TOPBAR */
-.cyber-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 11px 14px;
-  background: rgba(5, 7, 13, 0.94);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border-tech);
-}
-
-.cyber-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cyber-badge-99 {
-  background: var(--lime);
-  color: var(--lime-dark);
-  font-family: "Orbitron", sans-serif;
-  font-weight: 900;
-  font-size: 0.85rem;
-  padding: 3px 7px;
-  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
-}
-
-.cyber-brand-text {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.7px;
-}
-
-.cyber-live-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--lime);
-  border: 1px solid rgba(184, 255, 0, 0.45);
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: rgba(184, 255, 0, 0.08);
-}
-
-.pulse-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--lime);
-  box-shadow: 0 0 8px var(--lime);
-  animation: pulse 1.4s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.8); }
-}
-
-/* HERO COMPACTO COM KWID BEM ENQUADRADO */
-.cyber-hero {
-  padding: 14px;
-  background:
-    radial-gradient(circle at 80% 25%, rgba(29, 78, 216, 0.42) 0%, rgba(5, 7, 13, 0) 60%),
-    linear-gradient(180deg, #070d1f 0%, #05070d 100%);
-  border-bottom: 1px solid var(--border-tech);
-}
-
-.hero-eyebrow {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.64rem;
-  letter-spacing: 1.2px;
-  color: var(--lime);
-  margin-bottom: 4px;
-}
-
-.hero-title {
-  font-family: "Orbitron", sans-serif;
-  font-size: 1.55rem;
-  font-weight: 900;
-  line-height: 1.08;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.hero-title span {
-  color: var(--lime);
-}
-
-.hero-subtitle {
-  font-size: 0.92rem;
-  color: #cbd5e1;
-  line-height: 1.35;
-  margin-bottom: 12px;
-}
-
-.hero-subtitle strong {
-  color: var(--lime);
-}
-
-.hero-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.btn-cyber-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  text-decoration: none;
-  background: var(--lime);
-  color: var(--lime-dark);
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  padding: 10px 14px;
-  border: none;
-  cursor: pointer;
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-}
-
-.btn-cyber-primary.full {
-  width: 100%;
-}
-
-.btn-cyber-ghost {
-  background: rgba(14, 21, 43, 0.9);
-  border: 1px solid var(--cyan-neon);
-  color: var(--cyan-neon);
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-
-.hero-car-box {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  max-height: 220px;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  background: linear-gradient(135deg, #0b1634 0%, #050811 100%);
-  overflow: hidden;
-}
-
-.hero-car-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-}
-
-.hero-car-box.sem-imagem::before {
-  content: "99 DA SORTE • KWID EDITION";
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.85rem;
-  color: var(--lime);
-}
-
-.hero-car-caption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 7px 10px;
-  background: linear-gradient(180deg, rgba(5, 7, 13, 0.1) 0%, rgba(5, 7, 13, 0.92) 100%);
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.65rem;
-}
-
-.hero-car-caption span {
-  color: var(--cyan-neon);
-}
-
-.hero-car-caption strong {
-  color: var(--lime);
-  font-size: 0.74rem;
-}
-
-/* SEÇÕES */
-.cyber-section {
-  padding: 16px 14px;
-  border-bottom: 1px solid var(--border-tech);
-}
-
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.section-tag {
-  display: block;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.6rem;
-  color: var(--lime);
-  letter-spacing: 1px;
-  margin-bottom: 2px;
-}
-
-.section-title {
-  font-family: "Orbitron", sans-serif;
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-
-.section-desc {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  line-height: 1.35;
-  margin-bottom: 10px;
-}
-
-.clock-now-box {
-  text-align: right;
-  background: var(--bg-card);
-  border: 1px solid var(--border-tech);
-  padding: 5px 8px;
-}
-
-.clock-now-box span {
-  display: block;
-  font-size: 0.58rem;
-  color: var(--text-muted);
-}
-
-.clock-now-box strong {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.8rem;
-  color: var(--cyan-neon);
-}
-
-/* CARROSSEL HORIZONTAL COMPACTO */
-.carousel-controls-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.carousel-hint {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.carousel-nav-btns {
-  display: flex;
-  gap: 6px;
-}
-
-.btn-nav-slide {
-  width: 28px;
-  height: 28px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-tech);
-  color: var(--lime);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.carousel-viewport {
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-bottom: 4px;
-}
-
-.carousel-viewport::-webkit-scrollbar {
-  display: none;
-}
-
-.carousel-track {
-  display: flex;
-  gap: 10px;
-  width: max-content;
-}
-
-.concurso-card {
-  width: 164px;
-  flex-shrink: 0;
-  background: linear-gradient(160deg, #0e1630 0%, #080c18 100%);
-  border: 1px solid rgba(56, 189, 248, 0.32);
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.concurso-card.proximo {
-  border-color: var(--lime);
-  box-shadow: 0 0 14px rgba(184, 255, 0, 0.16);
-}
-
-.concurso-card.encerrado-hoje {
-  opacity: 0.72;
-}
-
-.card-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.6rem;
-}
-
-.card-num {
-  color: var(--cyan-neon);
-  font-weight: 700;
-}
-
-.card-status {
-  padding: 2px 5px;
-  font-weight: 800;
-  font-size: 0.56rem;
-}
-
-.card-status.aberto {
-  background: rgba(184, 255, 0, 0.16);
-  color: var(--lime);
-}
-
-.card-status.proximo-tag {
-  background: var(--lime);
-  color: var(--lime-dark);
-}
-
-.card-status.amanha {
-  background: rgba(148, 163, 184, 0.16);
-  color: #cbd5e1;
-}
-
-.card-hora {
-  font-family: "Orbitron", sans-serif;
-  font-size: 1.24rem;
-  font-weight: 900;
-  color: #ffffff;
-}
-
-.card-timer-box {
-  background: rgba(3, 6, 14, 0.85);
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  padding: 5px 7px;
-}
-
-.card-timer-box span {
-  display: block;
-  font-size: 0.58rem;
-  color: var(--text-muted);
-}
-
-.card-timer-box strong {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.84rem;
-  color: var(--lime);
-}
-
-.card-cta-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--cyan-neon);
-  padding-top: 4px;
-  border-top: 1px dashed rgba(56, 189, 248, 0.22);
-}
-
-.carousel-footer-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.btn-jump-next {
-  background: rgba(184, 255, 0, 0.12);
-  border: 1px solid rgba(184, 255, 0, 0.45);
-  color: var(--lime);
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.62rem;
-  font-weight: 700;
-  padding: 5px 8px;
-  cursor: pointer;
-}
-
-/* CONSULTA POR ID */
-.consulta-form {
-  display: flex;
-  gap: 8px;
-}
-
-.consulta-form input {
-  flex: 1;
-  padding: 9px 11px;
-  background: #050811;
-  border: 1px solid var(--border-tech);
-  color: #ffffff;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.82rem;
-}
-
-.consulta-resultado {
-  margin-top: 10px;
-  padding: 10px;
-  background: var(--bg-panel);
-  border: 1px solid var(--cyan-neon);
-  font-size: 0.88rem;
-  line-height: 1.4;
-}
-
-/* REGRAS */
-.rule-badge {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.56rem;
-  color: var(--lime-dark);
-  background: var(--lime);
-  padding: 3px 7px;
-  font-weight: 800;
-}
-
-.rules-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.rule-item {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-tech);
-  padding: 10px;
-}
-
-.rule-num {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: var(--lime);
-  border: 1px solid rgba(184, 255, 0, 0.4);
-  padding: 3px 6px;
-  flex-shrink: 0;
-}
-
-.rule-item p {
-  font-size: 0.86rem;
-  line-height: 1.36;
-  color: #e2e8f0;
-}
-
-.rule-item code {
-  color: var(--lime);
-  font-weight: 700;
-}
-
-/* MÉTRICAS */
-.cyber-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  padding: 14px;
-  background: linear-gradient(180deg, #09122b 0%, #05070d 100%);
-  border-bottom: 1px solid var(--border-tech);
-}
-
-.metric-card {
-  background: rgba(11, 16, 32, 0.9);
-  border: 1px solid var(--border-tech);
-  padding: 11px 8px;
-  text-align: center;
-}
-
-.metric-card strong {
-  display: block;
-  font-family: "Orbitron", sans-serif;
-  font-size: 1.15rem;
-  font-weight: 900;
-  color: #ffffff;
-}
-
-.metric-card span {
-  font-size: 0.64rem;
-  font-weight: 700;
-  color: var(--cyan-neon);
-  letter-spacing: 0.5px;
-}
-
-.metric-card.highlight-lime {
-  background: var(--lime);
-  border-color: var(--lime);
-}
-
-.metric-card.highlight-lime strong,
-.metric-card.highlight-lime span {
-  color: var(--lime-dark);
-}
-
-/* RODAPÉ */
-.cyber-footer {
-  padding: 16px 14px;
-  display: grid;
-  grid-template-columns: 1fr 96px;
-  gap: 12px;
-  align-items: center;
-  background: #060913;
-}
-
-.footer-info h3 {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.92rem;
-  margin-bottom: 4px;
-}
-
-.footer-info p {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  line-height: 1.35;
-  margin-bottom: 6px;
-}
-
-.footer-links {
-  font-size: 0.74rem;
-  color: var(--lime);
-  font-weight: 700;
-}
-
-.footer-qr-box {
-  background: var(--lime);
-  padding: 6px;
-  text-align: center;
-}
-
-.footer-qr-box img {
-  width: 84px;
-  height: 84px;
-  display: block;
-  margin: 0 auto;
-  background: #ffffff;
-}
-
-.qr-label {
-  display: block;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.58rem;
-  font-weight: 900;
-  color: var(--lime-dark);
-  margin-top: 3px;
-}
-
-/* MODAL INDIVIDUAL + BALÕES */
-.oculto {
-  display: none !important;
-}
-
-.cyber-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  background: rgba(2, 4, 10, 0.86);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-.cyber-modal-card {
-  width: 100%;
-  max-width: 440px;
-  max-height: 92vh;
-  overflow-y: auto;
-  background: #0a0f1f;
-  border: 1.5px solid var(--lime);
-  padding: 15px;
-  box-shadow: 0 0 32px rgba(184, 255, 0, 0.22);
-}
-
-.modal-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.modal-tag {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.62rem;
-  color: var(--lime);
-}
-
-.modal-top h3 {
-  font-family: "Orbitron", sans-serif;
-  font-size: 1.1rem;
-}
-
-.btn-modal-close {
-  background: transparent;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  color: #ffffff;
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.modal-timer-bar,
-.modal-resultado-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  background: rgba(29, 78, 216, 0.22);
-  border: 1px solid var(--border-tech);
-  padding: 7px 10px;
-  margin-bottom: 8px;
-  font-size: 0.76rem;
-}
-
-.modal-timer-bar strong,
-.modal-resultado-box strong {
-  font-family: "Orbitron", sans-serif;
-  color: var(--lime);
-  font-size: 0.86rem;
-}
-
-.social-proof-slot {
-  min-height: 44px;
-  margin-bottom: 10px;
-}
-
-.balao-compra {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: linear-gradient(90deg, rgba(184, 255, 0, 0.14) 0%, rgba(56, 189, 248, 0.12) 100%);
-  border-left: 3px solid var(--lime);
-  border-top: 1px solid rgba(184, 255, 0, 0.28);
-  border-right: 1px solid rgba(56, 189, 248, 0.28);
-  border-bottom: 1px solid rgba(56, 189, 248, 0.28);
-  padding: 7px 10px;
-  font-size: 0.8rem;
-  animation: fadeBalao 0.3s ease;
-}
-
-@keyframes fadeBalao {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.balao-compra strong {
-  color: var(--lime);
-}
-
-.balao-dz-tag {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.68rem;
-  font-weight: 800;
-  background: var(--lime);
-  color: var(--lime-dark);
-  padding: 2px 6px;
-  flex-shrink: 0;
-}
-
-.modal-visor-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  background: #050811;
-  border: 1px solid var(--border-tech);
-  padding: 9px 10px;
-  margin-bottom: 10px;
-}
-
-.modal-visor span {
-  display: block;
-  font-size: 0.64rem;
-  color: var(--text-muted);
-}
-
-.modal-visor strong {
-  font-family: "Orbitron", sans-serif;
-  font-size: 1.4rem;
-  color: var(--lime);
-}
-
-.btn-cyber-mini {
-  background: rgba(184, 255, 0, 0.14);
-  border: 1px solid var(--lime);
-  color: var(--lime);
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.66rem;
-  font-weight: 700;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.modal-dz-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
-  max-height: 155px;
-  overflow-y: auto;
-  padding: 6px;
-  background: #050811;
-  border: 1px solid var(--border-tech);
-  margin-bottom: 10px;
-}
-
-.cyber-dz-btn {
-  padding: 6px 2px;
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.66rem;
-  font-weight: 700;
-  background: #0d152b;
-  color: #e2e8f0;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  cursor: pointer;
-}
-
-.cyber-dz-btn.selecionada {
-  background: var(--lime);
-  color: var(--lime-dark);
-  border-color: var(--lime);
-}
-
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.modal-form input {
-  width: 100%;
-  padding: 9px 11px;
-  background: #050811;
-  border: 1px solid var(--border-tech);
-  color: #ffffff;
-  font-family: "Rajdhani", sans-serif;
-  font-size: 0.94rem;
-}
-
-.modal-form input:focus {
-  outline: none;
-  border-color: var(--lime);
-}
-
-.modal-feedback {
-  margin-top: 8px;
-  font-size: 0.84rem;
-  min-height: 18px;
-  color: var(--lime);
-  font-weight: 700;
-}
-
-.modal-feedback.erro {
-  color: #f87171;
-}
+const HORARIOS_CONCURSOS = [
+  '08:10', '09:10', '10:10', '11:10', '12:10', '13:10',
+  '14:10', '15:10', '16:10', '17:10', '18:10', '19:10',
+  '19:45', '20:50', '21:10'
+];
+
+const DEZENAS_100 = [
+  ...Array.from({ length: 99 }, (_, i) => String(i + 1).padStart(2, '0')),
+  '00'
+];
+
+// Lista base de agentes para balões dentro do concurso individual
+const AGENTES_AQUECIMENTO = {
+  ativo: true,
+  intervaloMs: 4200,
+  perfis: [
+    { nome: 'Lucas M.', rota: 'Centro' },
+    { nome: 'Patrícia S.', rota: 'Vila Nova' },
+    { nome: 'Rafael T.', rota: 'Zona Norte' },
+    { nome: 'Camila R.', rota: 'Jardim Luz' },
+    { nome: 'Diego A.', rota: 'Estação' },
+    { nome: 'Bruna O.', rota: 'Av. Principal' }
+  ]
+};
+
+const CONCURSOS = HORARIOS_CONCURSOS.map((horario, idx) => ({
+  id: `C-${String(idx + 1).padStart(2, '0')}`,
+  numero: String(idx + 1).padStart(2, '0'),
+  horario,
+  tipo: idx >= 12 ? 'EXTRA' : 'HORA',
+  valorBilhete: 2.5,
+  modalidade: 'DZ'
+}));
+
+const carouselViewportEl = document.getElementById('carousel-viewport');
+const carouselTrackEl = document.getElementById('carousel-track');
+const carouselIndicadorEl = document.getElementById('carousel-indicador');
+const btnPrevSlideEl = document.getElementById('btn-prev-slide');
+const btnNextSlideEl = document.getElementById('btn-next-slide');
+const btnIrProximoEl = document.getElementById('btn-ir-proximo');
+const btnHeroProximoEl = document.getElementById('btn-hero-proximo');
+const relogioAtualEl = document.getElementById('relogio-atual');
+const qrPaginaEl = document.getElementById('qr-pagina');
+
+const formConsultaIdEl = document.getElementById('form-consulta-id');
+const inputConsultaIdEl = document.getElementById('input-consulta-id');
+const resultadoConsultaIdEl = document.getElementById('resultado-consulta-id');
+
+const modalEl = document.getElementById('modal-concurso');
+const btnFecharModalEl = document.getElementById('btn-fechar-modal');
+const modalCodigoEl = document.getElementById('modal-codigo');
+const modalTituloEl = document.getElementById('modal-titulo');
+const modalCronometroEl = document.getElementById('modal-cronometro');
+const modalUltimoResultadoEl = document.getElementById('modal-ultimo-resultado');
+const slotAgentesEl = document.getElementById('slot-agentes-futuro');
+const modalDezenaDisplayEl = document.getElementById('modal-dezena-display');
+const btnModalSurpresinhaEl = document.getElementById('btn-modal-surpresinha');
+const modalGradeDzEl = document.getElementById('modal-grade-dz');
+const formConcursoIndividualEl = document.getElementById('form-concurso-individual');
+const modalNomeEl = document.getElementById('modal-nome');
+const modalWhatsappEl = document.getElementById('modal-whatsapp');
+const modalFeedbackEl = document.getElementById('modal-feedback');
+
+let concursoAtivo = null;
+let dezenaSelecionada = '';
+let idProximoGlobal = CONCURSOS[0].id;
+let posicaoInicialAjustada = false;
+let timerBaloesId = null;
+let ultimoAgenteIdx = -1;
+
+const STORAGE_RESERVAS_KEY = 'nine9_reservas_concursos_v1';
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function formatarDuracao(ms) {
+  const totalSeg = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSeg / 3600);
+  const m = Math.floor((totalSeg % 3600) / 60);
+  const s = totalSeg % 60;
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+}
+
+function calcularProximoAlvo(horarioStr, agora) {
+  const [hh, mm] = horarioStr.split(':').map(Number);
+  const alvoHoje = new Date(
+    agora.getFullYear(),
+    agora.getMonth(),
+    agora.getDate(),
+    hh,
+    mm,
+    0,
+    0
+  );
+
+  if (alvoHoje.getTime() > agora.getTime()) {
+    return {
+      restanteMs: alvoHoje.getTime() - agora.getTime(),
+      hoje: true
+    };
+  }
+
+  const alvoAmanha = new Date(
+    agora.getFullYear(),
+    agora.getMonth(),
+    agora.getDate() + 1,
+    hh,
+    mm,
+    0,
+    0
+  );
+
+  return {
+    restanteMs: alvoAmanha.getTime() - agora.getTime(),
+    hoje: false
+  };
+}
+
+function construirCarrossel() {
+  const triplo = [...CONCURSOS, ...CONCURSOS, ...CONCURSOS];
+
+  carouselTrackEl.innerHTML = triplo
+    .map(c => `
+      <article class="concurso-card" data-concurso-id="${c.id}">
+        <div class="card-top-row">
+          <span class="card-num">#${c.numero} • ${c.tipo}</span>
+          <span class="card-status aberto" data-status-for="${c.id}">HOJE</span>
+        </div>
+        <div class="card-hora">${c.horario}</div>
+        <div class="card-timer-box">
+          <span data-label-for="${c.id}">FECHA EM</span>
+          <strong data-timer-for="${c.id}">--:--:--</strong>
+        </div>
+        <div class="card-cta-line">
+          <span>DZ • R$ 2,50</span>
+          <span>ENTRAR ➔</span>
+        </div>
+      </article>
+    `)
+    .join('');
+
+  carouselTrackEl.querySelectorAll('.concurso-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const encontrado = CONCURSOS.find(item => item.id === card.dataset.concursoId);
+      if (encontrado) abrirModalConcurso(encontrado);
+    });
+  });
+}
+
+function larguraUmBloco() {
+  const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
+  if (!primeiroCard) return 174 * CONCURSOS.length;
+  return (primeiroCard.offsetWidth + 10) * CONCURSOS.length;
+}
+
+function normalizarLoopCarrossel() {
+  const bloco = larguraUmBloco();
+  if (!bloco) return;
+
+  if (carouselViewportEl.scrollLeft < bloco * 0.4) {
+    carouselViewportEl.scrollLeft += bloco;
+  } else if (carouselViewportEl.scrollLeft > bloco * 1.8) {
+    carouselViewportEl.scrollLeft -= bloco;
+  }
+
+  const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
+  const passo = primeiroCard ? primeiroCard.offsetWidth + 10 : 174;
+  const idxAtual = Math.round((carouselViewportEl.scrollLeft % bloco) / passo) % CONCURSOS.length;
+  const numeroExibido = pad2(((idxAtual + CONCURSOS.length) % CONCURSOS.length) + 1);
+  carouselIndicadorEl.textContent = `Concurso #${numeroExibido} de ${CONCURSOS.length}`;
+}
+
+function focarConcursoNoCarrossel(concursoId, suave = true) {
+  const cardsCentrais = Array.from(carouselTrackEl.querySelectorAll('.concurso-card')).slice(
+    CONCURSOS.length,
+    CONCURSOS.length * 2
+  );
+  const alvo = cardsCentrais.find(el => el.dataset.concursoId === concursoId);
+  if (!alvo) return;
+
+  const destino = Math.max(0, alvo.offsetLeft - 14);
+  if (suave) {
+    carouselViewportEl.scrollTo({ left: destino, behavior: 'smooth' });
+  } else {
+    carouselViewportEl.scrollLeft = destino;
+  }
+  normalizarLoopCarrossel();
+}
+
+btnPrevSlideEl.addEventListener('click', () => {
+  carouselViewportEl.scrollBy({ left: -174, behavior: 'smooth' });
+});
+
+btnNextSlideEl.addEventListener('click', () => {
+  carouselViewportEl.scrollBy({ left: 174, behavior: 'smooth' });
+});
+
+btnIrProximoEl.addEventListener('click', () => {
+  focarConcursoNoCarrossel(idProximoGlobal, true);
+});
+
+btnHeroProximoEl.addEventListener('click', () => {
+  focarConcursoNoCarrossel(idProximoGlobal, true);
+  document.getElementById('secao-concursos').scrollIntoView({ behavior: 'smooth' });
+});
+
+carouselViewportEl.addEventListener('scroll', normalizarLoopCarrossel, { passive: true });
+
+function atualizarCronometros() {
+  const agora = new Date();
+  relogioAtualEl.textContent = agora.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  let menorRestanteHoje = Infinity;
+  let idProximoHoje = null;
+
+  const estados = CONCURSOS.map(c => {
+    const info = calcularProximoAlvo(c.horario, agora);
+    if (info.hoje && info.restanteMs < menorRestanteHoje) {
+      menorRestanteHoje = info.restanteMs;
+      idProximoHoje = c.id;
+    }
+    return { concurso: c, info };
+  });
+
+  idProximoGlobal = idProximoHoje || CONCURSOS[0].id;
+
+  estados.forEach(({ concurso, info }) => {
+    const duracaoFmt = formatarDuracao(info.restanteMs);
+    const ehProximo = concurso.id === idProximoGlobal;
+
+    document.querySelectorAll(`[data-timer-for="${concurso.id}"]`).forEach(el => {
+      el.textContent = duracaoFmt;
+    });
+
+    document.querySelectorAll(`.concurso-card[data-concurso-id="${concurso.id}"]`).forEach(cardEl => {
+      cardEl.classList.toggle('proximo', ehProximo);
+      cardEl.classList.toggle('encerrado-hoje', !info.hoje);
+    });
+
+    document.querySelectorAll(`[data-status-for="${concurso.id}"]`).forEach(statusEl => {
+      if (ehProximo) {
+        statusEl.textContent = 'PRÓXIMO';
+        statusEl.className = 'card-status proximo-tag';
+      } else if (info.hoje) {
+        statusEl.textContent = 'HOJE';
+        statusEl.className = 'card-status aberto';
+      } else {
+        statusEl.textContent = 'AMANHÃ';
+        statusEl.className = 'card-status amanha';
+      }
+    });
+
+    document.querySelectorAll(`[data-label-for="${concurso.id}"]`).forEach(labelEl => {
+      labelEl.textContent = info.hoje ? 'FECHA EM' : 'PRÓXIMO CICLO';
+    });
+
+    if (concursoAtivo && concursoAtivo.id === concurso.id) {
+      modalCronometroEl.textContent = duracaoFmt;
+    }
+  });
+
+  if (!posicaoInicialAjustada) {
+    posicaoInicialAjustada = true;
+    focarConcursoNoCarrossel(idProximoGlobal, false);
+  }
+}
+
+/* BALÕES DE MOVIMENTAÇÃO DENTRO DO CONCURSO INDIVIDUAL */
+function exibirBalaoAgente() {
+  if (!concursoAtivo || !AGENTES_AQUECIMENTO.ativo || !AGENTES_AQUECIMENTO.perfis.length) {
+    return;
+  }
+
+  let idx = Math.floor(Math.random() * AGENTES_AQUECIMENTO.perfis.length);
+  if (idx === ultimoAgenteIdx && AGENTES_AQUECIMENTO.perfis.length > 1) {
+    idx = (idx + 1) % AGENTES_AQUECIMENTO.perfis.length;
+  }
+  ultimoAgenteIdx = idx;
+
+  const agente = AGENTES_AQUECIMENTO.perfis[idx];
+  const dzAleatoria = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
+
+  slotAgentesEl.innerHTML = `
+    <div class="balao-compra">
+      <div>
+        <strong>${agente.nome}</strong> (${agente.rota}) reservou no sorteio das <strong>${concursoAtivo.horario}</strong>
+      </div>
+      <span class="balao-dz-tag">DZ ${dzAleatoria}</span>
+    </div>
+  `;
+}
+
+function iniciarBaloesModal() {
+  pararBaloesModal();
+  if (!AGENTES_AQUECIMENTO.ativo) {
+    slotAgentesEl.innerHTML = '';
+    return;
+  }
+  exibirBalaoAgente();
+  timerBaloesId = setInterval(exibirBalaoAgente, AGENTES_AQUECIMENTO.intervaloMs);
+}
+
+function pararBaloesModal() {
+  if (timerBaloesId) {
+    clearInterval(timerBaloesId);
+    timerBaloesId = null;
+  }
+  slotAgentesEl.innerHTML = '';
+}
+
+function montarGradeModal() {
+  modalGradeDzEl.innerHTML = DEZENAS_100.map(
+    dz => `<button type="button" class="cyber-dz-btn" data-dz="${dz}">${dz}</button>`
+  ).join('');
+
+  modalGradeDzEl.addEventListener('click', e => {
+    const btn = e.target.closest('.cyber-dz-btn');
+    if (!btn) return;
+    selecionarDezena(btn.dataset.dz);
+  });
+}
+
+function selecionarDezena(dz) {
+  dezenaSelecionada = dz;
+  modalDezenaDisplayEl.textContent = dz || '--';
+  modalGradeDzEl.querySelectorAll('.cyber-dz-btn').forEach(btn => {
+    btn.classList.toggle('selecionada', btn.dataset.dz === dz);
+  });
+}
+
+function abrirModalConcurso(concurso) {
+  concursoAtivo = concurso;
+  dezenaSelecionada = '';
+  modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
+  modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
+  modalUltimoResultadoEl.textContent = 'Aguardando apuração';
+  modalFeedbackEl.textContent = '';
+  modalFeedbackEl.className = 'modal-feedback';
+  selecionarDezena('');
+  atualizarCronometros();
+  modalEl.classList.remove('oculto');
+  iniciarBaloesModal();
+}
+
+function fecharModalConcurso() {
+  pararBaloesModal();
+  concursoAtivo = null;
+  modalEl.classList.add('oculto');
+}
+
+btnFecharModalEl.addEventListener('click', fecharModalConcurso);
+modalEl.addEventListener('click', e => {
+  if (e.target === modalEl) fecharModalConcurso();
+});
+
+btnModalSurpresinhaEl.addEventListener('click', () => {
+  const sorteada = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
+  selecionarDezena(sorteada);
+  modalFeedbackEl.className = 'modal-feedback';
+  modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
+});
+
+function lerReservasLocais() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_RESERVAS_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function salvarReservaLocal(reserva) {
+  const lista = lerReservasLocais();
+  lista.unshift(reserva);
+  localStorage.setItem(STORAGE_RESERVAS_KEY, JSON.stringify(lista.slice(0, 100)));
+}
+
+formConcursoIndividualEl.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!concursoAtivo) return;
+
+  if (!dezenaSelecionada) {
+    modalFeedbackEl.className = 'modal-feedback erro';
+    modalFeedbackEl.textContent = 'Escolha uma dezena (01 a 00) antes de continuar.';
+    return;
+  }
+
+  const codigoBilhete = `99-${String(Math.floor(1000 + Math.random() * 9000))}`;
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+
+  modalFeedbackEl.className = 'modal-feedback';
+  modalFeedbackEl.textContent = 'Processando reserva...';
+
+  try {
+    const res = await fetch('/api/checkout/criar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
+        modalidade: 'DZ',
+        selecao: dezenaSelecionada,
+        valor: concursoAtivo.valorBilhete,
+        lead: {
+          nome: modalNomeEl.value.trim(),
+          contato: modalWhatsappEl.value.trim()
+        }
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.checkout_url) {
+      window.location.href = data.checkout_url;
+      return;
+    }
+  } catch (err) {
+    // Segue para registro local de demonstração caso o endpoint esteja em pausa
+  }
+
+  salvarReservaLocal({
+    id: codigoBilhete,
+    data: dataHoje,
+    horario: concursoAtivo.horario,
+    concursoNumero: concursoAtivo.numero,
+    dezena: dezenaSelecionada,
+    valor: 'R$ 2,50',
+    nome: modalNomeEl.value.trim()
+  });
+
+  modalFeedbackEl.className = 'modal-feedback';
+  modalFeedbackEl.textContent = `Bilhete ${codigoBilhete} reservado • Dezena ${dezenaSelecionada} • Concurso ${concursoAtivo.horario} (${dataHoje}).`;
+  formConcursoIndividualEl.reset();
+});
+
+formConsultaIdEl.addEventListener('submit', e => {
+  e.preventDefault();
+  const termo = inputConsultaIdEl.value.trim().toUpperCase();
+  if (!termo) return;
+
+  const reservas = lerReservasLocais();
+  const achado = reservas.find(item => String(item.id).toUpperCase() === termo);
+
+  resultadoConsultaIdEl.classList.remove('oculto');
+  if (!achado) {
+    resultadoConsultaIdEl.innerHTML = `ID <strong>${termo}</strong> não encontrado neste dispositivo. Confira o código ou fale no atendimento.`;
+    return;
+  }
+
+  resultadoConsultaIdEl.innerHTML = `
+    <div><strong>ID:</strong> ${achado.id}</div>
+    <div><strong>Data &amp; Concurso:</strong> ${achado.data} às <strong>${achado.horario}</strong> (#${achado.concursoNumero})</div>
+    <div><strong>Dezena / Valor:</strong> <strong>${achado.dezena}</strong> • ${achado.valor}</div>
+    <div><strong>Status:</strong> Aguardando apuração oficial</div>
+  `;
+});
+
+function configurarQrPagina() {
+  const urlAtual = encodeURIComponent(window.location.href);
+  qrPaginaEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${urlAtual}`;
+}
+
+construirCarrossel();
+montarGradeModal();
+configurarQrPagina();
+atualizarCronometros();
+setInterval(atualizarCronometros, 1000);
+  
