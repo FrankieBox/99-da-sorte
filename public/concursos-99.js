@@ -21,18 +21,6 @@ const DEZENAS_100 = [
   '00'
 ];
 
-// Interruptor rápido para ligar/desligar o time de agentes de aquecimento
-let AGENTE_AQUECIMENTO_ATIVO = true;
-
-const AGENTES_PADRAO = [
-  { id: 'AGT-01', nome: 'Lucas M.', regiao: 'Zona Sul', dezenasPreferidas: ['27', '07', '77'], ativo: true },
-  { id: 'AGT-02', nome: 'Camila R.', regiao: 'Centro', dezenasPreferidas: ['14', '24', '88'], ativo: true },
-  { id: 'AGT-03', nome: 'Rafael S.', regiao: 'Zona Leste', dezenasPreferidas: ['03', '33', '69'], ativo: true },
-  { id: 'AGT-04', nome: 'Beatriz F.', regiao: 'Zona Norte', dezenasPreferidas: ['19', '45', '00'], ativo: true },
-  { id: 'AGT-05', nome: 'Diego T.', regiao: 'Zona Oeste', dezenasPreferidas: ['11', '52', '91'], ativo: true },
-  { id: 'AGT-06', nome: 'Aline C.', regiao: 'Centro', dezenasPreferidas: ['08', '22', '64'], ativo: true }
-];
-
 const CONCURSOS = HORARIOS_CONCURSOS.map((horario, idx) => ({
   id: `C-${String(idx + 1).padStart(2, '0')}`,
   numero: String(idx + 1).padStart(2, '0'),
@@ -66,22 +54,14 @@ const modalNomeEl = document.getElementById('modal-nome');
 const modalWhatsappEl = document.getElementById('modal-whatsapp');
 const modalFeedbackEl = document.getElementById('modal-feedback');
 
-const inputConsultaIdEl = document.getElementById('input-consulta-id');
-const btnConsultaIdEl = document.getElementById('btn-consulta-id');
-const resultadoConsultaIdEl = document.getElementById('resultado-consulta-id');
-
 let concursoAtivo = null;
 let dezenaSelecionada = '';
 let idProximoGlobal = CONCURSOS[0].id;
-let posicaoInicialAjustada = false;
+let posicãoInicialAjustada = false;
 
-let resultadosPorHorario = {};
-let catalogoAgentes = [...AGENTES_PADRAO];
-let intervaloMinMs = 8000;
-let intervaloMaxMs = 16000;
-let timerAgenteId = null;
-let ultimoAgenteId = '';
-let ultimaDezenaAgente = '';
+let configAgentesCache = null;
+let timerAgentesId = null;
+let ultimoAgenteId = null;
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -277,115 +257,106 @@ function atualizarCronometros() {
     }
   });
 
-  if (!posicaoInicialAjustada) {
-    posicaoInicialAjustada = true;
+  if (!posicãoInicialAjustada) {
+    posicãoInicialAjustada = true;
     focarConcursoNoCarrossel(idProximoGlobal, false);
   }
 }
 
-async function carregarResultados() {
-  try {
-    const res = await fetch('/api/resultados');
-    if (!res.ok) return;
-    const data = await res.json();
-    resultadosPorHorario = data.ultimoPorHorario || {};
-    if (concursoAtivo) {
-      atualizarBlocoResultadoModal(concursoAtivo.horario);
-    }
-  } catch (e) {
-    // Mantém estado atual em caso de falha de rede
-  }
-}
-
-function atualizarBlocoResultadoModal(horario) {
+async function carregarResultadoDoHorario(horarioStr) {
   if (!modalUltimoResultadoEl) return;
-  const resHorario = resultadosPorHorario[horario];
-  if (resHorario && resHorario.dezena) {
-    modalUltimoResultadoEl.textContent = `Dezena ${resHorario.dezena} • Grupo ${resHorario.grupo}`;
-  } else {
-    modalUltimoResultadoEl.textContent = 'Aguardando apuração';
+  modalUltimoResultadoEl.textContent = 'Aguardando apuração';
+  try {
+    const hojeIso = new Date().toISOString().slice(0, 10);
+    const res = await fetch(
+      `/api/resultados?horario=${encodeURIComponent(horarioStr)}&data=${encodeURIComponent(hojeIso)}`
+    );
+    if (!res.ok) return;
+    const payload = await res.json();
+    const item =
+      (payload.resultados && payload.resultados[0]) ||
+      (payload.ultimoPorHorario && payload.ultimoPorHorario[horarioStr]);
+    if (item && item.dezena) {
+      modalUltimoResultadoEl.textContent = `Dezena ${item.dezena} • Grupo ${item.grupo}`;
+    }
+  } catch (_) {
+    // Mantém estado padrão em caso de erro de rede
   }
 }
 
-async function carregarConfigAgentes() {
-  try {
-    const res = await fetch('/api/agentes');
-    if (!res.ok) return;
-    const cfg = await res.json();
-    if (typeof cfg.ativoGlobal === 'boolean') {
-      AGENTE_AQUECIMENTO_ATIVO = cfg.ativoGlobal;
-    }
-    if (Array.isArray(cfg.agentes) && cfg.agentes.length > 0) {
-      catalogoAgentes = cfg.agentes.filter(a => a.ativo !== false);
-    }
-    if (cfg.intervaloMinSegundos) {
-      intervaloMinMs = Number(cfg.intervaloMinSegundos) * 1000;
-    }
-    if (cfg.intervaloMaxSegundos) {
-      intervaloMaxMs = Math.max(intervaloMinMs + 1000, Number(cfg.intervaloMaxSegundos) * 1000);
-    }
-  } catch (e) {
-    catalogoAgentes = AGENTES_PADRAO.filter(a => a.ativo !== false);
+function pararAgentesModal() {
+  if (timerAgentesId) {
+    clearTimeout(timerAgentesId);
+    timerAgentesId = null;
+  }
+  if (slotAgentesEl) {
+    slotAgentesEl.innerHTML = '';
   }
 }
 
 function escolherDezenaAgente(agente) {
-  const poolPrefs = Array.isArray(agente.dezenasPreferidas)
-    ? agente.dezenasPreferidas.filter(d => DEZENAS_100.includes(d) && d !== ultimaDezenaAgente)
-    : [];
-
-  let escolhida = '';
-  if (poolPrefs.length > 0 && Math.random() < 0.7) {
-    escolhida = poolPrefs[Math.floor(Math.random() * poolPrefs.length)];
-  } else {
-    const alternativas = DEZENAS_100.filter(d => d !== ultimaDezenaAgente);
-    escolhida = alternativas[Math.floor(Math.random() * alternativas.length)];
+  const prefs = Array.isArray(agente.dezenasPreferidas) ? agente.dezenasPreferidas : [];
+  if (prefs.length > 0 && Math.random() < 0.65) {
+    const escolhida = prefs[Math.floor(Math.random() * prefs.length)];
+    return String(escolhida).padStart(2, '0');
   }
-
-  ultimaDezenaAgente = escolhida;
-  return escolhida;
+  return DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
 }
 
-function exibirBalaoAgente() {
-  if (!slotAgentesEl || !concursoAtivo || !AGENTE_AQUECIMENTO_ATIVO || catalogoAgentes.length === 0) {
-    return;
-  }
+function exibirBalaoAgente(cfg, concurso) {
+  if (!slotAgentesEl || !concursoAtivo || concursoAtivo.id !== concurso.id) return;
+  const ativos = (cfg.agentes || []).filter(a => a && a.ativo !== false);
+  if (ativos.length === 0) return;
 
-  const candidatos = catalogoAgentes.filter(a => a.id !== ultimoAgenteId);
-  const lista = candidatos.length > 0 ? candidatos : catalogoAgentes;
-  const agente = lista[Math.floor(Math.random() * lista.length)];
+  const candidatos = ativos.length > 1 ? ativos.filter(a => a.id !== ultimoAgenteId) : ativos;
+  const agente = candidatos[Math.floor(Math.random() * candidatos.length)];
   ultimoAgenteId = agente.id;
 
-  const dezena = escolherDezenaAgente(agente);
+  const dz = escolherDezenaAgente(agente);
+  const nome = agente.nome || 'Passageiro 99';
+  const regiao = agente.regiao || 'Rota 99';
+
   slotAgentesEl.innerHTML = `
-    <div class="balao-agente-toast" style="padding:8px 12px;border-radius:10px;background:rgba(16,32,56,0.92);border:1px solid rgba(163,230,53,0.45);color:#f8fafc;font-size:0.82rem;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <span><strong>${agente.nome}</strong> • ${agente.regiao} garantiu a dezena <strong style="color:#a3e635;">${dezena}</strong></span>
-      <span style="opacity:0.75;font-size:0.74rem;">${concursoAtivo.horario}</span>
+    <div class="agente-balao">
+      <div class="agente-balao-info">
+        <strong>${nome}</strong> garantiu bilhete no sorteio das ${concurso.horario}
+        <span class="agente-balao-regiao">● ${regiao} • agora mesmo</span>
+      </div>
+      <span class="agente-balao-dz">DZ ${dz}</span>
     </div>
   `;
 }
 
-function agendarProximoBalaoAgente() {
-  limparAgentesModal();
-  if (!concursoAtivo || !AGENTE_AQUECIMENTO_ATIVO) return;
+async function iniciarAgentesModal(concurso) {
+  pararAgentesModal();
+  try {
+    const res = await fetch('/api/agentes');
+    if (!res.ok) return;
+    const cfg = await res.json();
+    configAgentesCache = cfg;
 
-  const delay =
-    intervaloMinMs + Math.floor(Math.random() * Math.max(1000, intervaloMaxMs - intervaloMinMs));
+    if (!cfg || !cfg.ativoGlobal || !concursoAtivo || concursoAtivo.id !== concurso.id) {
+      return;
+    }
 
-  timerAgenteId = setTimeout(() => {
-    if (!concursoAtivo || !AGENTE_AQUECIMENTO_ATIVO) return;
-    exibirBalaoAgente();
-    agendarProximoBalaoAgente();
-  }, delay);
-}
+    exibirBalaoAgente(cfg, concurso);
 
-function limparAgentesModal() {
-  if (timerAgenteId) {
-    clearTimeout(timerAgenteId);
-    timerAgenteId = null;
-  }
-  if (slotAgentesEl) {
-    slotAgentesEl.innerHTML = '';
+    const minSeg = Math.max(4, Number(cfg.intervaloMinSegundos) || 8);
+    const maxSeg = Math.max(minSeg + 1, Number(cfg.intervaloMaxSegundos) || 16);
+
+    const agendarProximo = () => {
+      if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
+      const esperaMs = (minSeg + Math.random() * (maxSeg - minSeg)) * 1000;
+      timerAgentesId = setTimeout(() => {
+        if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
+        exibirBalaoAgente(configAgentesCache, concurso);
+        agendarProximo();
+      }, esperaMs);
+    };
+
+    agendarProximo();
+  } catch (_) {
+    // Falha silenciosa se rota de agentes estiver indisponível
   }
 }
 
@@ -417,19 +388,15 @@ function abrirModalConcurso(concurso) {
   modalFeedbackEl.textContent = '';
   modalFeedbackEl.className = 'modal-feedback';
   selecionarDezena('');
-  atualizarBlocoResultadoModal(concurso.horario);
   atualizarCronometros();
   modalEl.classList.remove('oculto');
-
-  if (AGENTE_AQUECIMENTO_ATIVO) {
-    exibirBalaoAgente();
-    agendarProximoBalaoAgente();
-  }
+  carregarResultadoDoHorario(concurso.horario);
+  iniciarAgentesModal(concurso);
 }
 
 function fecharModalConcurso() {
+  pararAgentesModal();
   concursoAtivo = null;
-  limparAgentesModal();
   modalEl.classList.add('oculto');
 }
 
@@ -444,33 +411,6 @@ btnModalSurpresinhaEl.addEventListener('click', () => {
   modalFeedbackEl.className = 'modal-feedback';
   modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
 });
-
-async function consultarBilhetePorId() {
-  if (!inputConsultaIdEl || !resultadoConsultaIdEl) return;
-  const id = inputConsultaIdEl.value.trim();
-  if (!id) {
-    resultadoConsultaIdEl.textContent = 'Digite o ID do bilhete para consultar.';
-    return;
-  }
-
-  resultadoConsultaIdEl.textContent = 'Consultando bilhete...';
-  const res = await fetch(`/api/bilhete/${encodeURIComponent(id)}`);
-  const data = await res.json();
-
-  if (!res.ok) {
-    resultadoConsultaIdEl.textContent = data.erro || 'Bilhete não encontrado.';
-    return;
-  }
-
-  const selFmt = Array.isArray(data.selecao) ? data.selecao.join(' • ') : data.selecao;
-  resultadoConsultaIdEl.textContent =
-    `ID ${data.id} • Dia ${data.data} • Concurso ${data.horarioConcurso} • ` +
-    `${data.modalidade} ${selFmt} • ${data.statusApuracao}`;
-}
-
-if (btnConsultaIdEl) {
-  btnConsultaIdEl.addEventListener('click', consultarBilhetePorId);
-}
 
 formConcursoIndividualEl.addEventListener('submit', async e => {
   e.preventDefault();
@@ -490,8 +430,9 @@ formConcursoIndividualEl.addEventListener('submit', async e => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
-      modalidade: 'DZ',
       horarioConcurso: concursoAtivo.horario,
+      dataCiclo: new Date().toISOString().slice(0, 10),
+      modalidade: 'DZ',
       selecao: dezenaSelecionada,
       valor: concursoAtivo.valorBilhete,
       lead: {
@@ -522,7 +463,5 @@ construirCarrossel();
 montarGradeModal();
 configurarQrPagina();
 atualizarCronometros();
-carregarResultados();
-carregarConfigAgentes();
 setInterval(atualizarCronometros, 1000);
-setInterval(carregarResultados, 20000);
+      
