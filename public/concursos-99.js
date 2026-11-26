@@ -39,6 +39,10 @@ const btnIrProximoEl = document.getElementById('btn-ir-proximo');
 const relogioAtualEl = document.getElementById('relogio-atual');
 const qrPaginaEl = document.getElementById('qr-pagina');
 
+const formConsultarBilheteEl = document.getElementById('form-consultar-bilhete');
+const inputIdBilheteEl = document.getElementById('input-id-bilhete');
+const resultadoConsultaBilheteEl = document.getElementById('resultado-consulta-bilhete');
+
 const modalEl = document.getElementById('modal-concurso');
 const btnFecharModalEl = document.getElementById('btn-fechar-modal');
 const modalCodigoEl = document.getElementById('modal-codigo');
@@ -57,11 +61,12 @@ const modalFeedbackEl = document.getElementById('modal-feedback');
 let concursoAtivo = null;
 let dezenaSelecionada = '';
 let idProximoGlobal = CONCURSOS[0].id;
-let posicãoInicialAjustada = false;
+let posicaoInicialAjustada = false;
 
 let configAgentesCache = null;
 let timerAgentesId = null;
 let ultimoAgenteId = null;
+let ultimaDezenaAgente = null;
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -113,6 +118,7 @@ function calcularProximoAlvo(horarioStr, agora) {
 }
 
 function construirCarrossel() {
+  if (!carouselTrackEl) return;
   const triplo = [...CONCURSOS, ...CONCURSOS, ...CONCURSOS];
 
   carouselTrackEl.innerHTML = triplo
@@ -146,12 +152,14 @@ function construirCarrossel() {
 }
 
 function larguraUmBloco() {
+  if (!carouselTrackEl) return 178 * CONCURSOS.length;
   const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
   if (!primeiroCard) return 178 * CONCURSOS.length;
   return (primeiroCard.offsetWidth + 10) * CONCURSOS.length;
 }
 
 function normalizarLoopCarrossel() {
+  if (!carouselViewportEl || !carouselIndicadorEl) return;
   const bloco = larguraUmBloco();
   if (!bloco) return;
 
@@ -161,7 +169,7 @@ function normalizarLoopCarrossel() {
     carouselViewportEl.scrollLeft -= bloco;
   }
 
-  const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
+  const primeiroCard = carouselTrackEl && carouselTrackEl.querySelector('.concurso-card');
   const passo = primeiroCard ? primeiroCard.offsetWidth + 10 : 178;
   const idxAtual = Math.round((carouselViewportEl.scrollLeft % bloco) / passo) % CONCURSOS.length;
   const numeroExibido = pad2(((idxAtual + CONCURSOS.length) % CONCURSOS.length) + 1);
@@ -169,6 +177,7 @@ function normalizarLoopCarrossel() {
 }
 
 function focarConcursoNoCarrossel(concursoId, suave = true) {
+  if (!carouselViewportEl || !carouselTrackEl) return;
   const bloco = larguraUmBloco();
   const cardsCentrais = Array.from(carouselTrackEl.querySelectorAll('.concurso-card')).slice(
     CONCURSOS.length,
@@ -186,27 +195,37 @@ function focarConcursoNoCarrossel(concursoId, suave = true) {
   normalizarLoopCarrossel();
 }
 
-btnPrevSlideEl.addEventListener('click', () => {
-  carouselViewportEl.scrollBy({ left: -185, behavior: 'smooth' });
-});
+if (btnPrevSlideEl && carouselViewportEl) {
+  btnPrevSlideEl.addEventListener('click', () => {
+    carouselViewportEl.scrollBy({ left: -185, behavior: 'smooth' });
+  });
+}
 
-btnNextSlideEl.addEventListener('click', () => {
-  carouselViewportEl.scrollBy({ left: 185, behavior: 'smooth' });
-});
+if (btnNextSlideEl && carouselViewportEl) {
+  btnNextSlideEl.addEventListener('click', () => {
+    carouselViewportEl.scrollBy({ left: 185, behavior: 'smooth' });
+  });
+}
 
-btnIrProximoEl.addEventListener('click', () => {
-  focarConcursoNoCarrossel(idProximoGlobal, true);
-});
+if (btnIrProximoEl) {
+  btnIrProximoEl.addEventListener('click', () => {
+    focarConcursoNoCarrossel(idProximoGlobal, true);
+  });
+}
 
-carouselViewportEl.addEventListener('scroll', normalizarLoopCarrossel, { passive: true });
+if (carouselViewportEl) {
+  carouselViewportEl.addEventListener('scroll', normalizarLoopCarrossel, { passive: true });
+}
 
 function atualizarCronometros() {
   const agora = new Date();
-  relogioAtualEl.textContent = agora.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
+  if (relogioAtualEl) {
+    relogioAtualEl.textContent = agora.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
 
   let menorRestanteHoje = Infinity;
   let idProximoHoje = null;
@@ -252,13 +271,13 @@ function atualizarCronometros() {
       labelEl.textContent = info.hoje ? 'FECHA EM' : 'PRÓXIMO CICLO';
     });
 
-    if (concursoAtivo && concursoAtivo.id === concurso.id) {
+    if (concursoAtivo && concursoAtivo.id === concurso.id && modalCronometroEl) {
       modalCronometroEl.textContent = duracaoFmt;
     }
   });
 
-  if (!posicãoInicialAjustada) {
-    posicãoInicialAjustada = true;
+  if (!posicaoInicialAjustada) {
+    posicaoInicialAjustada = true;
     focarConcursoNoCarrossel(idProximoGlobal, false);
   }
 }
@@ -296,17 +315,33 @@ function pararAgentesModal() {
 
 function escolherDezenaAgente(agente) {
   const prefs = Array.isArray(agente.dezenasPreferidas) ? agente.dezenasPreferidas : [];
+  let candidata = '';
+
   if (prefs.length > 0 && Math.random() < 0.65) {
     const escolhida = prefs[Math.floor(Math.random() * prefs.length)];
-    return String(escolhida).padStart(2, '0');
+    candidata = String(escolhida).padStart(2, '0');
+  } else {
+    candidata = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
   }
-  return DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
+
+  if (candidata === ultimaDezenaAgente) {
+    const idx = DEZENAS_100.indexOf(candidata);
+    candidata = DEZENAS_100[(idx + 1) % DEZENAS_100.length];
+  }
+
+  ultimaDezenaAgente = candidata;
+  return candidata;
 }
 
 function exibirBalaoAgente(cfg, concurso) {
   if (!slotAgentesEl || !concursoAtivo || concursoAtivo.id !== concurso.id) return;
+  if (document.hidden) return;
+
   const ativos = (cfg.agentes || []).filter(a => a && a.ativo !== false);
-  if (ativos.length === 0) return;
+  if (ativos.length === 0) {
+    slotAgentesEl.innerHTML = '';
+    return;
+  }
 
   const candidatos = ativos.length > 1 ? ativos.filter(a => a.id !== ultimoAgenteId) : ativos;
   const agente = candidatos[Math.floor(Math.random() * candidatos.length)];
@@ -329,6 +364,8 @@ function exibirBalaoAgente(cfg, concurso) {
 
 async function iniciarAgentesModal(concurso) {
   pararAgentesModal();
+  if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
+
   try {
     const res = await fetch('/api/agentes');
     if (!res.ok) return;
@@ -341,26 +378,72 @@ async function iniciarAgentesModal(concurso) {
 
     exibirBalaoAgente(cfg, concurso);
 
-    const minSeg = Math.max(4, Number(cfg.intervaloMinSegundos) || 8);
-    const maxSeg = Math.max(minSeg + 1, Number(cfg.intervaloMaxSegundos) || 16);
+    const minSeg = Math.max(5, Number(cfg.intervaloMinSegundos) || 8);
+    const maxSeg = Math.max(minSeg + 2, Number(cfg.intervaloMaxSegundos) || 16);
 
     const agendarProximo = () => {
       if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
       const esperaMs = (minSeg + Math.random() * (maxSeg - minSeg)) * 1000;
       timerAgentesId = setTimeout(() => {
         if (!concursoAtivo || concursoAtivo.id !== concurso.id) return;
-        exibirBalaoAgente(configAgentesCache, concurso);
+        if (!document.hidden) {
+          exibirBalaoAgente(configAgentesCache, concurso);
+        }
         agendarProximo();
       }, esperaMs);
     };
 
     agendarProximo();
   } catch (_) {
-    // Falha silenciosa se rota de agentes estiver indisponível
+    // Falha silenciosa sem afetar o modal ou o restante da página
   }
 }
 
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (timerAgentesId) {
+      clearTimeout(timerAgentesId);
+      timerAgentesId = null;
+    }
+    if (slotAgentesEl) slotAgentesEl.innerHTML = '';
+  } else if (concursoAtivo) {
+    iniciarAgentesModal(concursoAtivo);
+  }
+});
+
+if (formConsultarBilheteEl && inputIdBilheteEl && resultadoConsultaBilheteEl) {
+  formConsultarBilheteEl.addEventListener('submit', async e => {
+    e.preventDefault();
+    const idBusca = inputIdBilheteEl.value.trim();
+    if (!idBusca) return;
+
+    resultadoConsultaBilheteEl.innerHTML = '<span style="color:#94a3b8;">Consultando bilhete...</span>';
+    try {
+      const res = await fetch(`/api/bilhete/${encodeURIComponent(idBusca)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        resultadoConsultaBilheteEl.innerHTML = `<span style="color:#f87171;">${data.erro || 'Bilhete não encontrado.'}</span>`;
+        return;
+      }
+
+      const selecaoFmt = Array.isArray(data.selecao) ? data.selecao.join(' • ') : data.selecao;
+      resultadoConsultaBilheteEl.innerHTML = `
+        <div style="background:#050811;border:1px solid #b8ff00;padding:10px;line-height:1.45;">
+          <strong style="color:#b8ff00;font-family:'Orbitron',sans-serif;">${data.id}</strong><br />
+          <span>Data: <strong>${data.data}</strong> • Horário: <strong>${data.horarioConcurso}</strong></span><br />
+          <span>Modalidade: <strong>${data.modalidade}</strong> • Seleção: <strong>${selecaoFmt}</strong></span><br />
+          <span>Status: <strong style="color:#38bdf8;">${data.statusApuracao}</strong></span>
+        </div>
+      `;
+    } catch (_) {
+      resultadoConsultaBilheteEl.innerHTML =
+        '<span style="color:#f87171;">Falha de comunicação ao consultar bilhete.</span>';
+    }
+  });
+}
+
 function montarGradeModal() {
+  if (!modalGradeDzEl) return;
   modalGradeDzEl.innerHTML = DEZENAS_100.map(
     dz => `<button type="button" class="cyber-dz-btn" data-dz="${dz}">${dz}</button>`
   ).join('');
@@ -374,19 +457,24 @@ function montarGradeModal() {
 
 function selecionarDezena(dz) {
   dezenaSelecionada = dz;
-  modalDezenaDisplayEl.textContent = dz || '--';
-  modalGradeDzEl.querySelectorAll('.cyber-dz-btn').forEach(btn => {
-    btn.classList.toggle('selecionada', btn.dataset.dz === dz);
-  });
+  if (modalDezenaDisplayEl) modalDezenaDisplayEl.textContent = dz || '--';
+  if (modalGradeDzEl) {
+    modalGradeDzEl.querySelectorAll('.cyber-dz-btn').forEach(btn => {
+      btn.classList.toggle('selecionada', btn.dataset.dz === dz);
+    });
+  }
 }
 
 function abrirModalConcurso(concurso) {
+  if (!modalEl) return;
   concursoAtivo = concurso;
   dezenaSelecionada = '';
-  modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
-  modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
-  modalFeedbackEl.textContent = '';
-  modalFeedbackEl.className = 'modal-feedback';
+  if (modalCodigoEl) modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
+  if (modalTituloEl) modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
+  if (modalFeedbackEl) {
+    modalFeedbackEl.textContent = '';
+    modalFeedbackEl.className = 'modal-feedback';
+  }
   selecionarDezena('');
   atualizarCronometros();
   modalEl.classList.remove('oculto');
@@ -397,64 +485,91 @@ function abrirModalConcurso(concurso) {
 function fecharModalConcurso() {
   pararAgentesModal();
   concursoAtivo = null;
-  modalEl.classList.add('oculto');
+  if (modalEl) modalEl.classList.add('oculto');
 }
 
-btnFecharModalEl.addEventListener('click', fecharModalConcurso);
-modalEl.addEventListener('click', e => {
-  if (e.target === modalEl) fecharModalConcurso();
-});
+if (btnFecharModalEl) {
+  btnFecharModalEl.addEventListener('click', fecharModalConcurso);
+}
 
-btnModalSurpresinhaEl.addEventListener('click', () => {
-  const sorteada = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
-  selecionarDezena(sorteada);
-  modalFeedbackEl.className = 'modal-feedback';
-  modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
-});
-
-formConcursoIndividualEl.addEventListener('submit', async e => {
-  e.preventDefault();
-  if (!concursoAtivo) return;
-
-  if (!dezenaSelecionada) {
-    modalFeedbackEl.className = 'modal-feedback erro';
-    modalFeedbackEl.textContent = 'Escolha uma dezena (01 a 00) antes de continuar.';
-    return;
-  }
-
-  modalFeedbackEl.className = 'modal-feedback';
-  modalFeedbackEl.textContent = 'Conectando ao checkout...';
-
-  const res = await fetch('/api/checkout/criar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
-      horarioConcurso: concursoAtivo.horario,
-      dataCiclo: new Date().toISOString().slice(0, 10),
-      modalidade: 'DZ',
-      selecao: dezenaSelecionada,
-      valor: concursoAtivo.valorBilhete,
-      lead: {
-        nome: modalNomeEl.value.trim(),
-        contato: modalWhatsappEl.value.trim()
-      }
-    })
+if (modalEl) {
+  modalEl.addEventListener('click', e => {
+    if (e.target === modalEl) fecharModalConcurso();
   });
+}
 
-  const data = await res.json();
-  if (!res.ok) {
-    modalFeedbackEl.className = 'modal-feedback erro';
-    modalFeedbackEl.textContent =
-      data.erro ||
-      `Bilhete Dezena ${dezenaSelecionada} (Concurso ${concursoAtivo.horario}) registrado em modo pré-checkout enquanto o banco é finalizado.`;
-    return;
-  }
+if (btnModalSurpresinhaEl) {
+  btnModalSurpresinhaEl.addEventListener('click', () => {
+    const sorteada = DEZENAS_100[Math.floor(Math.random() * DEZENAS_100.length)];
+    selecionarDezena(sorteada);
+    if (modalFeedbackEl) {
+      modalFeedbackEl.className = 'modal-feedback';
+      modalFeedbackEl.textContent = `Dezena sugerida: ${sorteada}`;
+    }
+  });
+}
 
-  window.location.href = data.checkout_url;
-});
+if (formConcursoIndividualEl) {
+  formConcursoIndividualEl.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!concursoAtivo) return;
+
+    if (!dezenaSelecionada) {
+      if (modalFeedbackEl) {
+        modalFeedbackEl.className = 'modal-feedback erro';
+        modalFeedbackEl.textContent = 'Escolha uma dezena (01 a 00) antes de continuar.';
+      }
+      return;
+    }
+
+    if (modalFeedbackEl) {
+      modalFeedbackEl.className = 'modal-feedback';
+      modalFeedbackEl.textContent = 'Conectando ao checkout...';
+    }
+
+    try {
+      const res = await fetch('/api/checkout/criar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
+          horarioConcurso: concursoAtivo.horario,
+          dataCiclo: new Date().toISOString().slice(0, 10),
+          modalidade: 'DZ',
+          selecao: dezenaSelecionada,
+          valor: concursoAtivo.valorBilhete,
+          lead: {
+            nome: modalNomeEl ? modalNomeEl.value.trim() : '',
+            contato: modalWhatsappEl ? modalWhatsappEl.value.trim() : ''
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (modalFeedbackEl) {
+          modalFeedbackEl.className = 'modal-feedback erro';
+          modalFeedbackEl.textContent =
+            data.erro ||
+            `Bilhete Dezena ${dezenaSelecionada} (Concurso ${concursoAtivo.horario}) registrado em modo pré-checkout enquanto o banco é finalizado.`;
+        }
+        return;
+      }
+
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch (_) {
+      if (modalFeedbackEl) {
+        modalFeedbackEl.className = 'modal-feedback erro';
+        modalFeedbackEl.textContent = 'Falha de comunicação ao iniciar o checkout.';
+      }
+    }
+  });
+}
 
 function configurarQrPagina() {
+  if (!qrPaginaEl) return;
   const urlAtual = encodeURIComponent(window.location.href);
   qrPaginaEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${urlAtual}`;
 }
@@ -464,4 +579,3 @@ montarGradeModal();
 configurarQrPagina();
 atualizarCronometros();
 setInterval(atualizarCronometros, 1000);
-                                            
