@@ -56,31 +56,41 @@ async function carregarEstadoServidor() {
   }
 }
 
+function montarCardConcursoHtml(c) {
+  const temResultado = Boolean(c.resultado);
+  const textoResultado = temResultado
+    ? `DEZENA: ${c.resultado}`
+    : 'Aguardando apuração';
+
+  return `
+    <div class="concurso-card" onclick="abrirModalConcurso('${c.id}')">
+      <div class="card-top">
+        <span>CONCURSO #${c.numero}</span>
+        <span>R$ ${Number(c.valor).toFixed(2).replace('.', ',')}</span>
+      </div>
+      <div class="card-hora">${c.horario}</div>
+      <div class="card-premio">Prêmio: <strong>${c.premio}</strong></div>
+      <div class="card-resultado ${temResultado ? 'apurado' : ''}">
+        ${textoResultado}
+      </div>
+      <div class="card-btn">ESCOLHER DEZENA ➔</div>
+    </div>
+  `;
+}
+
 function renderizarGradeConcursos() {
   const container = document.getElementById('lista-concursos');
   if (!container) return;
 
-  container.innerHTML = estadoApp.concursos.map(c => {
-    const temResultado = Boolean(c.resultado);
-    const textoResultado = temResultado
-      ? `DEZENA: ${c.resultado}`
-      : 'Aguardando apuração';
+  if (!estadoApp.concursos || estadoApp.concursos.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
 
-    return `
-      <div class="concurso-card" onclick="abrirModalConcurso('${c.id}')">
-        <div class="card-top">
-          <span>CONCURSO #${c.numero}</span>
-          <span>R$ ${Number(c.valor).toFixed(2).replace('.', ',')}</span>
-        </div>
-        <div class="card-hora">${c.horario}</div>
-        <div class="card-premio">Prêmio: <strong>${c.premio}</strong></div>
-        <div class="card-resultado ${temResultado ? 'apurado' : ''}">
-          ${textoResultado}
-        </div>
-        <div class="card-btn">ESCOLHER DEZENA ➔</div>
-      </div>
-    `;
-  }).join('');
+  // Duplica a sequência para manter o loop contínuo sem salto visual
+  const cardsOriginais = estadoApp.concursos.map(montarCardConcursoHtml).join('');
+  const cardsDuplicados = estadoApp.concursos.map(montarCardConcursoHtml).join('');
+  container.innerHTML = cardsOriginais + cardsDuplicados;
 }
 
 function gerarGridDezenas() {
@@ -125,7 +135,7 @@ window.abrirModalConcurso = function (concursoId) {
 function atualizarTextoResultadoModal(concurso) {
   const el = document.getElementById('modal-ultimo-resultado');
   if (concurso.resultado) {
-    el.innerHTML = `<span class="neon-green">DEZENA SORTEADA: ${concurso.resultado}</span>`;
+    el.innerHTML = `<span class="amarelo-99">DEZENA SORTEADA: ${concurso.resultado}</span>`;
   } else {
     el.textContent = 'Aguardando apuração';
   }
@@ -336,19 +346,19 @@ async function consultarBilhetePorId() {
 
     const b = data.bilhete;
     const statusPgto = b.statusPagamento === 'PAGO_CONFIRMADO'
-      ? '<span style="color:#b4ff00;">PAGO / CONFIRMADO</span>'
-      : '<span style="color:#facc15;">QR CODE PROVISÓRIO GERADO</span>';
+      ? '<span style="color:#ffcc00;">PAGO / CONFIRMADO</span>'
+      : '<span style="color:#ffffff;">QR CODE PROVISÓRIO GERADO</span>';
 
     let statusResultado = 'Aguardando sorteio do horário';
     if (b.statusSorteio === 'PREMIADO') {
-      statusResultado = '<strong style="color:#b4ff00;">🏆 BILHETE PREMIADO!</strong>';
+      statusResultado = '<strong style="color:#ffcc00;">🏆 BILHETE PREMIADO!</strong>';
     } else if (b.statusSorteio === 'NAO_PREMIADO') {
       statusResultado = `Não premiado (Dezena sorteada: ${data.resultadoConcurso})`;
     }
 
     box.innerHTML = `
       <div><strong>ID:</strong> ${b.id} | <strong>Apostador:</strong> ${b.nome}</div>
-      <div><strong>Sorteio:</strong> ${b.horario} | <strong>Dezena:</strong> <span class="neon-green">${b.dezena}</span></div>
+      <div><strong>Sorteio:</strong> ${b.horario} | <strong>Dezena:</strong> <span class="amarelo-99">${b.dezena}</span></div>
       <div><strong>Pagamento:</strong> ${statusPgto}</div>
       <div><strong>Status:</strong> ${statusResultado}</div>
     `;
