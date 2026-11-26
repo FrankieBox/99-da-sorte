@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>99 da sorte — Produto</title>
+  <meta name="google" content="notranslate" />
+  <title>99 da sorte — Gift Card Pix R$ 50,00</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="notranslate">
   <header class="wa-header">
     <div class="wa-header-top">
       <div class="wa-brand">
         <div class="wa-avatar">99</div>
         <div>
           <div class="wa-title">99 da sorte</div>
-          <div class="wa-status">● participação online</div>
+          <div class="wa-status">● participação online • Dezena (DZ)</div>
         </div>
       </div>
       <div class="wa-metrics">
-        <span class="wa-pill">Bilhete: <strong id="lp-preco">R$ 1,00</strong></span>
+        <span class="wa-pill">Bilhete: <strong id="lp-preco">R$ 2,50</strong></span>
       </div>
     </div>
   </header>
@@ -26,23 +27,36 @@
     <div class="wa-container">
       <section id="status-retorno" class="wa-card oculto"></section>
 
-      <section class="wa-card">
-        <div class="wa-card-titulo" id="lp-titulo">Produto / Concurso em Breve</div>
-        <p class="lp-subtitulo" id="lp-subtitulo">Base modelo pronta para receber produto e criativo.</p>
-        <p class="lp-texto" id="lp-copy"></p>
+      <!-- COPY E OFERTA DO PRODUTO -->
+      <section class="wa-card lp-hero">
+        <span class="lp-badge">PRÊMIO: GIFT CARD PIX R$ 50,00</span>
+        <div class="wa-card-titulo" id="lp-titulo">Gift Card Pix de R$ 50,00 — Escolha sua Dezena da Sorte</div>
+        <p class="lp-subtitulo" id="lp-subtitulo">
+          Participe por apenas R$ 2,50 e concorra a R$ 50,00 via Pix com transparência total.
+        </p>
+
+        <div id="lp-copy-blocos" class="lp-copy-lista"></div>
 
         <div class="lp-regra-box">
           <strong>Como concorrer:</strong>
           <p id="lp-regra"></p>
-          <span class="lp-meta">Modalidade do produto: <strong id="lp-modalidade-label">M (Milhar)</strong></span>
+          <span class="lp-meta">
+            Modalidade: <strong id="lp-modalidade-label">DZ (Dezena)</strong> • Chance base: <strong id="lp-chance-label">1 em 100</strong>
+          </span>
         </div>
       </section>
 
+      <!-- ESCOLHA DO BILHETE + LEAD + CHECKOUT -->
       <section class="wa-card">
-        <div class="wa-card-titulo">Escolher Número e Dados de Contato</div>
+        <div class="wa-card-titulo" id="lp-cta-titulo">Garanta sua Dezena por R$ 2,50</div>
+        <p class="lp-subtitulo">
+          Toque em uma dezena da grade ou digite no teclado abaixo, preencha seus dados e siga para o pagamento.
+        </p>
 
         <form id="form-landing">
           <div id="lp-visores-selecao" class="bloco-alvo"></div>
+
+          <div id="lp-grade-dezenas" class="lp-grade-dz oculto"></div>
 
           <div class="numpad" data-teclado="landing">
             <button type="button" class="tecla" data-digito="1">1</button>
@@ -69,7 +83,9 @@
             <input type="text" id="lead-contato" placeholder="(11) 99999-9999" required />
           </div>
 
-          <button type="submit" class="btn-wa-enviar">Ir para Checkout InfinitePay</button>
+          <button type="submit" id="btn-lp-submit" class="btn-wa-enviar">
+            Garantir Dezena por R$ 2,50
+          </button>
         </form>
 
         <p id="lp-feedback" class="feedback"></p>
