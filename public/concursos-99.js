@@ -21,6 +21,15 @@ const DEZENAS_100 = [
   '00'
 ];
 
+// Gancho preparado para o futuro gerenciador de resultados automáticos por horário
+const RESULTADOS_CONCURSOS = {};
+
+// Gancho reservado para ativar futuramente os balões de agentes de aquecimento no modal
+const AGENTE_AQUECIMENTO_CONFIG = {
+  ativo: false,
+  agentes: []
+};
+
 const CONCURSOS = HORARIOS_CONCURSOS.map((horario, idx) => ({
   id: `C-${String(idx + 1).padStart(2, '0')}`,
   numero: String(idx + 1).padStart(2, '0'),
@@ -30,7 +39,12 @@ const CONCURSOS = HORARIOS_CONCURSOS.map((horario, idx) => ({
   modalidade: 'DZ'
 }));
 
-const gridConcursosEl = document.getElementById('grid-concursos');
+const carouselViewportEl = document.getElementById('carousel-viewport');
+const carouselTrackEl = document.getElementById('carousel-track');
+const carouselIndicadorEl = document.getElementById('carousel-indicador');
+const btnPrevSlideEl = document.getElementById('btn-prev-slide');
+const btnNextSlideEl = document.getElementById('btn-next-slide');
+const btnIrProximoEl = document.getElementById('btn-ir-proximo');
 const relogioAtualEl = document.getElementById('relogio-atual');
 const qrPaginaEl = document.getElementById('qr-pagina');
 
@@ -39,6 +53,7 @@ const btnFecharModalEl = document.getElementById('btn-fechar-modal');
 const modalCodigoEl = document.getElementById('modal-codigo');
 const modalTituloEl = document.getElementById('modal-titulo');
 const modalCronometroEl = document.getElementById('modal-cronometro');
+const modalUltimoResultadoEl = document.getElementById('modal-ultimo-resultado');
 const modalDezenaDisplayEl = document.getElementById('modal-dezena-display');
 const btnModalSurpresinhaEl = document.getElementById('btn-modal-surpresinha');
 const modalGradeDzEl = document.getElementById('modal-grade-dz');
@@ -49,6 +64,8 @@ const modalFeedbackEl = document.getElementById('modal-feedback');
 
 let concursoAtivo = null;
 let dezenaSelecionada = '';
+let idProximoGlobal = CONCURSOS[0].id;
+let posicaoInicialAjustada = false;
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -61,6 +78,20 @@ function formatarDuracao(ms) {
   const s = totalSeg % 60;
   return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
+
+function formatarTelefone(valor) {
+  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 11);
+  if (digitos.length <= 2) return digitos ? `(${digitos}` : '';
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  if (digitos.length <= 10) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  }
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
+
+modalWhatsappEl.addEventListener('input', () => {
+  modalWhatsappEl.value = formatarTelefone(modalWhatsappEl.value);
+});
 
 function calcularProximoAlvo(horarioStr, agora) {
   const [hh, mm] = horarioStr.split(':').map(Number);
@@ -99,34 +130,93 @@ function calcularProximoAlvo(horarioStr, agora) {
   };
 }
 
-function construirCards() {
-  gridConcursosEl.innerHTML = CONCURSOS.map(c => {
-    return `
-      <article class="concurso-card" id="card-${c.id}" data-concurso-id="${c.id}">
-        <div class="card-top-row">
-          <span class="card-num">#${c.numero} • ${c.tipo === 'SESSÃO ESPECIAL' ? 'EXTRA' : 'HORA'}</span>
-          <span class="card-status aberto" id="status-${c.id}">HOJE</span>
-        </div>
-        <div class="card-hora">${c.horario}</div>
-        <div class="card-timer-box">
-          <span id="label-timer-${c.id}">FECHA EM</span>
-          <strong id="timer-${c.id}">--:--:--</strong>
-        </div>
-        <div class="card-cta-line">
-          <span>DEZENA • R$ 2,50</span>
-          <span>ENTRAR ➔</span>
-        </div>
-      </article>
-    `;
-  }).join('');
+function construirCarrossel() {
+  const triplo = [...CONCURSOS, ...CONCURSOS, ...CONCURSOS];
 
-  gridConcursosEl.querySelectorAll('.concurso-card').forEach(card => {
+  carouselTrackEl.innerHTML = triplo
+    .map((c, idx) => {
+      return `
+        <article class="concurso-card" data-concurso-id="${c.id}" data-indice-real="${idx % CONCURSOS.length}">
+          <div class="card-top-row">
+            <span class="card-num">#${c.numero} • ${c.tipo === 'SESSÃO ESPECIAL' ? 'EXTRA' : 'HORA'}</span>
+            <span class="card-status aberto" data-status-for="${c.id}">HOJE</span>
+          </div>
+          <div class="card-hora">${c.horario}</div>
+          <div class="card-timer-box">
+            <span data-label-for="${c.id}">FECHA EM</span>
+            <strong data-timer-for="${c.id}">--:--:--</strong>
+          </div>
+          <div class="card-cta-line">
+            <span>DEZENA • R$ 2,50</span>
+            <span>ENTRAR ➔</span>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+
+  carouselTrackEl.querySelectorAll('.concurso-card').forEach(card => {
     card.addEventListener('click', () => {
       const c = CONCURSOS.find(item => item.id === card.dataset.concursoId);
       if (c) abrirModalConcurso(c);
     });
   });
 }
+
+function larguraUmBloco() {
+  const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
+  if (!primeiroCard) return 178 * CONCURSOS.length;
+  return (primeiroCard.offsetWidth + 10) * CONCURSOS.length;
+}
+
+function normalizarLoopCarrossel() {
+  const bloco = larguraUmBloco();
+  if (!bloco) return;
+
+  if (carouselViewportEl.scrollLeft < bloco * 0.4) {
+    carouselViewportEl.scrollLeft += bloco;
+  } else if (carouselViewportEl.scrollLeft > bloco * 1.8) {
+    carouselViewportEl.scrollLeft -= bloco;
+  }
+
+  const primeiroCard = carouselTrackEl.querySelector('.concurso-card');
+  const passo = primeiroCard ? primeiroCard.offsetWidth + 10 : 178;
+  const idxAtual = Math.round((carouselViewportEl.scrollLeft % bloco) / passo) % CONCURSOS.length;
+  const numeroExibido = pad2(((idxAtual + CONCURSOS.length) % CONCURSOS.length) + 1);
+  carouselIndicadorEl.textContent = `Concurso #${numeroExibido} de ${CONCURSOS.length}`;
+}
+
+function focarConcursoNoCarrossel(concursoId, suave = true) {
+  const bloco = larguraUmBloco();
+  const cardsCentrais = Array.from(carouselTrackEl.querySelectorAll('.concurso-card')).slice(
+    CONCURSOS.length,
+    CONCURSOS.length * 2
+  );
+  const alvo = cardsCentrais.find(el => el.dataset.concursoId === concursoId);
+  if (!alvo) return;
+
+  const destino = alvo.offsetLeft - 14;
+  if (suave) {
+    carouselViewportEl.scrollTo({ left: destino, behavior: 'smooth' });
+  } else {
+    carouselViewportEl.scrollLeft = destino || bloco;
+  }
+  normalizarLoopCarrossel();
+}
+
+btnPrevSlideEl.addEventListener('click', () => {
+  carouselViewportEl.scrollBy({ left: -185, behavior: 'smooth' });
+});
+
+btnNextSlideEl.addEventListener('click', () => {
+  carouselViewportEl.scrollBy({ left: 185, behavior: 'smooth' });
+});
+
+btnIrProximoEl.addEventListener('click', () => {
+  focarConcursoNoCarrossel(idProximoGlobal, true);
+});
+
+carouselViewportEl.addEventListener('scroll', normalizarLoopCarrossel, { passive: true });
 
 function atualizarCronometros() {
   const agora = new Date();
@@ -148,37 +238,47 @@ function atualizarCronometros() {
     return { concurso: c, info };
   });
 
+  idProximoGlobal = idProximoHoje || CONCURSOS[0].id;
+
   estados.forEach(({ concurso, info }) => {
-    const cardEl = document.getElementById(`card-${concurso.id}`);
-    const timerEl = document.getElementById(`timer-${concurso.id}`);
-    const labelEl = document.getElementById(`label-timer-${concurso.id}`);
-    const statusEl = document.getElementById(`status-${concurso.id}`);
-    if (!cardEl || !timerEl || !labelEl || !statusEl) return;
+    const duracaoFmt = formatarDuracao(info.restanteMs);
+    const ehProximo = concurso.id === idProximoGlobal;
 
-    timerEl.textContent = formatarDuracao(info.restanteMs);
+    document.querySelectorAll(`[data-timer-for="${concurso.id}"]`).forEach(el => {
+      el.textContent = duracaoFmt;
+    });
 
-    const ehProximo = concurso.id === idProximoHoje;
-    cardEl.classList.toggle('proximo', ehProximo);
-    cardEl.classList.toggle('encerrado-hoje', !info.hoje);
+    document.querySelectorAll(`.concurso-card[data-concurso-id="${concurso.id}"]`).forEach(cardEl => {
+      cardEl.classList.toggle('proximo', ehProximo);
+      cardEl.classList.toggle('encerrado-hoje', !info.hoje);
+    });
 
-    if (ehProximo) {
-      statusEl.textContent = 'PRÓXIMO';
-      statusEl.className = 'card-status proximo-tag';
-      labelEl.textContent = 'FECHA EM';
-    } else if (info.hoje) {
-      statusEl.textContent = 'HOJE';
-      statusEl.className = 'card-status aberto';
-      labelEl.textContent = 'FECHA EM';
-    } else {
-      statusEl.textContent = 'AMANHÃ';
-      statusEl.className = 'card-status amanha';
-      labelEl.textContent = 'PRÓXIMO CICLO';
-    }
+    document.querySelectorAll(`[data-status-for="${concurso.id}"]`).forEach(statusEl => {
+      if (ehProximo) {
+        statusEl.textContent = 'PRÓXIMO';
+        statusEl.className = 'card-status proximo-tag';
+      } else if (info.hoje) {
+        statusEl.textContent = 'HOJE';
+        statusEl.className = 'card-status aberto';
+      } else {
+        statusEl.textContent = 'AMANHÃ';
+        statusEl.className = 'card-status amanha';
+      }
+    });
+
+    document.querySelectorAll(`[data-label-for="${concurso.id}"]`).forEach(labelEl => {
+      labelEl.textContent = info.hoje ? 'FECHA EM' : 'PRÓXIMO CICLO';
+    });
 
     if (concursoAtivo && concursoAtivo.id === concurso.id) {
-      modalCronometroEl.textContent = formatarDuracao(info.restanteMs);
+      modalCronometroEl.textContent = duracaoFmt;
     }
   });
+
+  if (!posicaoInicialAjustada) {
+    posicaoInicialAjustada = true;
+    focarConcursoNoCarrossel(idProximoGlobal, false);
+  }
 }
 
 function montarGradeModal() {
@@ -201,11 +301,21 @@ function selecionarDezena(dz) {
   });
 }
 
+function salvarRascunhoLocal(payload) {
+  try {
+    const chave = 'rascunhos_concursos_99';
+    const lista = JSON.parse(localStorage.getItem(chave) || '[]');
+    lista.unshift({ ...payload, criadoEm: new Date().toISOString() });
+    localStorage.setItem(chave, JSON.stringify(lista.slice(0, 50)));
+  } catch (_) {}
+}
+
 function abrirModalConcurso(concurso) {
   concursoAtivo = concurso;
   dezenaSelecionada = '';
   modalCodigoEl.textContent = `CONCURSO #${concurso.numero} • ${concurso.tipo}`;
   modalTituloEl.textContent = `SORTEIO ${concurso.horario}`;
+  modalUltimoResultadoEl.textContent = RESULTADOS_CONCURSOS[concurso.horario] || 'Aguardando apuração';
   modalFeedbackEl.textContent = '';
   modalFeedbackEl.className = 'modal-feedback';
   selecionarDezena('');
@@ -240,34 +350,46 @@ formConcursoIndividualEl.addEventListener('submit', async e => {
     return;
   }
 
+  const payload = {
+    produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
+    horario: concursoAtivo.horario,
+    modalidade: 'DZ',
+    selecao: dezenaSelecionada,
+    valor: concursoAtivo.valorBilhete,
+    lead: {
+      nome: modalNomeEl.value.trim(),
+      contato: modalWhatsappEl.value.trim()
+    }
+  };
+
   modalFeedbackEl.className = 'modal-feedback';
   modalFeedbackEl.textContent = 'Conectando ao checkout...';
 
-  const res = await fetch('/api/checkout/criar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      produto: `Concurso ${concursoAtivo.horario} (#${concursoAtivo.numero})`,
-      modalidade: 'DZ',
-      selecao: dezenaSelecionada,
-      valor: concursoAtivo.valorBilhete,
-      lead: {
-        nome: modalNomeEl.value.trim(),
-        contato: modalWhatsappEl.value.trim()
-      }
-    })
-  });
+  try {
+    const res = await fetch('/api/checkout/criar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
+    const data = await res.json();
+    if (!res.ok) {
+      salvarRascunhoLocal(payload);
+      modalFeedbackEl.className = 'modal-feedback erro';
+      modalFeedbackEl.textContent =
+        data.erro ||
+        `Dezena ${dezenaSelecionada} (${concursoAtivo.horario}) salva localmente enquanto o checkout é ativado.`;
+      return;
+    }
+
+    if (data.checkout_url) {
+      window.location.href = data.checkout_url;
+    }
+  } catch (_) {
+    salvarRascunhoLocal(payload);
     modalFeedbackEl.className = 'modal-feedback erro';
-    modalFeedbackEl.textContent =
-      data.erro ||
-      `Bilhete Dezena ${dezenaSelecionada} (Concurso ${concursoAtivo.horario}) registrado em modo pré-checkout enquanto o banco é finalizado.`;
-    return;
+    modalFeedbackEl.textContent = `Dezena ${dezenaSelecionada} (${concursoAtivo.horario}) salva localmente para conferência.`;
   }
-
-  window.location.href = data.checkout_url;
 });
 
 function configurarQrPagina() {
@@ -275,8 +397,9 @@ function configurarQrPagina() {
   qrPaginaEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${urlAtual}`;
 }
 
-construirCards();
+construirCarrossel();
 montarGradeModal();
 configurarQrPagina();
 atualizarCronometros();
 setInterval(atualizarCronometros, 1000);
+    
