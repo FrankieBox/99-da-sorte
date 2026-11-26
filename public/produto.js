@@ -1,38 +1,62 @@
 const COTACOES = {
-  M: { nome: 'Milhar', codigo: 'M', qtd: 1, maxDigitos: 4, tipo: 'milhar' },
-  C: { nome: 'Centena', codigo: 'C', qtd: 1, maxDigitos: 3, tipo: 'centena' },
-  DZ: { nome: 'Dezena', codigo: 'DZ', qtd: 1, maxDigitos: 2, tipo: 'dezena' },
-  U: { nome: 'Unidade', codigo: 'U', qtd: 1, maxDigitos: 1, tipo: 'unidade' },
-  G: { nome: 'Grupo', codigo: 'G', qtd: 1, maxDigitos: 2, tipo: 'grupo' },
-  DG: { nome: 'Dupla de Grupo', codigo: 'DG', qtd: 2, maxDigitos: 2, tipo: 'grupo' },
-  TG: { nome: 'Terno de Grupo', codigo: 'TG', qtd: 3, maxDigitos: 2, tipo: 'grupo' },
-  PAS: { nome: 'Passe', codigo: 'PAS', qtd: 2, maxDigitos: 2, tipo: 'grupo' },
-  DDZ: { nome: 'Duque de Dezena', codigo: 'DDZ', qtd: 2, maxDigitos: 2, tipo: 'dezena' },
-  TDZ: { nome: 'Terno de Dezena', codigo: 'TDZ', qtd: 3, maxDigitos: 2, tipo: 'dezena' }
+  M: { nome: 'Milhar', codigo: 'M', qtd: 1, maxDigitos: 4, tipo: 'milhar', chance: '1 em 10.000' },
+  C: { nome: 'Centena', codigo: 'C', qtd: 1, maxDigitos: 3, tipo: 'centena', chance: '1 em 1.000' },
+  DZ: { nome: 'Dezena', codigo: 'DZ', qtd: 1, maxDigitos: 2, tipo: 'dezena', chance: '1 em 100' },
+  U: { nome: 'Unidade', codigo: 'U', qtd: 1, maxDigitos: 1, tipo: 'unidade', chance: '1 em 10' },
+  G: { nome: 'Grupo', codigo: 'G', qtd: 1, maxDigitos: 2, tipo: 'grupo', chance: '1 em 25' },
+  DG: { nome: 'Dupla de Grupo', codigo: 'DG', qtd: 2, maxDigitos: 2, tipo: 'grupo', chance: '1 em 300' },
+  TG: { nome: 'Terno de Grupo', codigo: 'TG', qtd: 3, maxDigitos: 2, tipo: 'grupo', chance: '1 em 2.300' },
+  PAS: { nome: 'Passe', codigo: 'PAS', qtd: 2, maxDigitos: 2, tipo: 'grupo', chance: '1 em 300' },
+  DDZ: { nome: 'Duque de Dezena', codigo: 'DDZ', qtd: 2, maxDigitos: 2, tipo: 'dezena', chance: '1 em 4.950' },
+  TDZ: { nome: 'Terno de Dezena', codigo: 'TDZ', qtd: 3, maxDigitos: 2, tipo: 'dezena', chance: '1 em 161.700' }
 };
+
+const DEZENAS_100 = [
+  ...Array.from({ length: 99 }, (_, i) => String(i + 1).padStart(2, '0')),
+  '00'
+];
 
 const params = new URLSearchParams(window.location.search);
 
-let configPagina = {
-  titulo: params.get('titulo') || 'Produto / Concurso em Breve',
-  subtitulo: params.get('subtitulo') || 'Base modelo pronta para receber produto e criativo.',
-  copy:
-    params.get('copy') ||
-    'Espaço reservado para a copy de venda do produto. O sorteio é único e compartilhado entre todos os produtos, variando apenas a modalidade utilizada.',
+const PRODUTO_PADRAO = {
+  titulo: 'Gift Card Pix de R$ 50,00 — Escolha sua Dezena da Sorte',
+  subtitulo: 'Participe por apenas R$ 2,50 e concorra a R$ 50,00 via Pix com transparência total.',
+  copyPontos: [
+    'Escolha a sua dezena de 01 a 99 ou 00 e pague apenas R$ 2,50 por bilhete.',
+    'Prêmio de R$ 50,00 em Gift Card / Pix para quem acertar a dezena no sorteio compartilhado do 99 da sorte.',
+    'Processo simples e direto: escolha o número, informe seu contato e já fica tudo registrado para falarmos com você caso seja o vencedor.'
+  ],
   regraConcorrer:
-    params.get('regra') ||
-    'Escolha o número de acordo com a modalidade definida para este produto e preencha seus dados de contato para falarmos com você caso seja sorteado.',
-  modalidade: COTACOES[params.get('mod')] ? params.get('mod') : 'M',
-  precoBilhete: Number(params.get('preco')) >= 1 ? Number(params.get('preco')) : 1.0
+    'Cada bilhete corresponde a 1 Dezena (01 a 99 ou 00), somando 100 opções possíveis. O sorteio é único e compartilhado entre os produtos, e entraremos em contato pelos dados informados no formulário caso sua dezena seja contemplada.',
+  ctaBotao: 'Garantir Dezena por R$ 2,50',
+  modalidade: 'DZ',
+  precoBilhete: 2.5
+};
+
+let configPagina = {
+  titulo: params.get('titulo') || PRODUTO_PADRAO.titulo,
+  subtitulo: params.get('subtitulo') || PRODUTO_PADRAO.subtitulo,
+  copyPontos: params.get('copy') ? [params.get('copy')] : PRODUTO_PADRAO.copyPontos,
+  regraConcorrer: params.get('regra') || PRODUTO_PADRAO.regraConcorrer,
+  ctaBotao: params.get('cta') || PRODUTO_PADRAO.ctaBotao,
+  modalidade: COTACOES[params.get('mod')] ? params.get('mod') : PRODUTO_PADRAO.modalidade,
+  precoBilhete:
+    params.get('preco') && !Number.isNaN(Number(params.get('preco'))) && Number(params.get('preco')) > 0
+      ? Number(params.get('preco'))
+      : PRODUTO_PADRAO.precoBilhete
 };
 
 const lpTituloEl = document.getElementById('lp-titulo');
 const lpSubtituloEl = document.getElementById('lp-subtitulo');
-const lpCopyEl = document.getElementById('lp-copy');
+const lpCopyBlocosEl = document.getElementById('lp-copy-blocos');
 const lpRegraEl = document.getElementById('lp-regra');
 const lpModalidadeLabelEl = document.getElementById('lp-modalidade-label');
+const lpChanceLabelEl = document.getElementById('lp-chance-label');
 const lpPrecoEl = document.getElementById('lp-preco');
 const lpVisoresEl = document.getElementById('lp-visores-selecao');
+const lpGradeDezenasEl = document.getElementById('lp-grade-dezenas');
+const lpCtaTituloEl = document.getElementById('lp-cta-titulo');
+const btnLpSubmitEl = document.getElementById('btn-lp-submit');
 const formLandingEl = document.getElementById('form-landing');
 const leadNomeEl = document.getElementById('lead-nome');
 const leadContatoEl = document.getElementById('lead-contato');
@@ -51,15 +75,64 @@ function mostrarFeedback(texto, tipo = 'sucesso') {
   feedbackEl.className = `feedback ${tipo}`;
 }
 
+function normalizarDezena(valor) {
+  const limpo = String(valor || '').replace(/\D/g, '').slice(0, 2);
+  if (!limpo) return '';
+  const pad = limpo.padStart(2, '0');
+  return DEZENAS_100.includes(pad) ? pad : '';
+}
+
+function montarGradeDezenas() {
+  lpGradeDezenasEl.innerHTML = DEZENAS_100
+    .map(dz => `<button type="button" class="dz-chip" data-dz="${dz}">${dz}</button>`)
+    .join('');
+
+  lpGradeDezenasEl.addEventListener('click', e => {
+    const btn = e.target.closest('.dz-chip');
+    if (!btn) return;
+    const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
+    const idx = Number(alvoAtivo.split('-')[1] || 0);
+    itensSelecionados[idx] = btn.dataset.dz;
+    if (idx < cfg.qtd - 1) {
+      definirAlvo(`item-${idx + 1}`);
+    }
+    atualizarVisores();
+  });
+}
+
+function destacarDezenaAtiva() {
+  const idx = Number(alvoAtivo.split('-')[1] || 0);
+  const atual = normalizarDezena(itensSelecionados[idx]);
+  lpGradeDezenasEl.querySelectorAll('.dz-chip').forEach(btn => {
+    btn.classList.toggle('ativa', btn.dataset.dz === atual);
+  });
+}
+
+function renderizarCopy() {
+  lpCopyBlocosEl.innerHTML = configPagina.copyPontos
+    .map(
+      texto => `
+        <div class="lp-copy-item">
+          <span class="lp-copy-check">✓</span>
+          <span>${texto}</span>
+        </div>
+      `
+    )
+    .join('');
+}
+
 function aplicarDadosPagina() {
-  const cfg = COTACOES[configPagina.modalidade] || COTACOES.M;
+  const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
   document.title = `99 da sorte — ${configPagina.titulo}`;
   lpTituloEl.textContent = configPagina.titulo;
   lpSubtituloEl.textContent = configPagina.subtitulo;
-  lpCopyEl.textContent = configPagina.copy;
+  renderizarCopy();
   lpRegraEl.textContent = configPagina.regraConcorrer;
   lpModalidadeLabelEl.textContent = `${cfg.codigo} (${cfg.nome})`;
+  lpChanceLabelEl.textContent = cfg.chance;
   lpPrecoEl.textContent = formatarMoeda(configPagina.precoBilhete);
+  lpCtaTituloEl.textContent = configPagina.ctaBotao;
+  btnLpSubmitEl.textContent = configPagina.ctaBotao;
 
   itensSelecionados = Array.from({ length: cfg.qtd }, () => '');
   alvoAtivo = 'item-0';
@@ -67,7 +140,7 @@ function aplicarDadosPagina() {
   const colClass = cfg.qtd === 3 ? 'cols-3' : cfg.qtd === 2 ? 'cols-2' : 'cols-1';
   let html = `<div class="visores-grid ${colClass}">`;
   for (let i = 0; i < cfg.qtd; i++) {
-    const rotulo = cfg.qtd > 1 ? `${i + 1}º ${cfg.tipo}` : `${cfg.nome} (${cfg.codigo})`;
+    const rotulo = cfg.qtd > 1 ? `${i + 1}º ${cfg.tipo}` : `Bilhete ${cfg.nome} (${cfg.codigo})`;
     html += `
       <div class="visor-box ${i === 0 ? 'ativo' : ''}" data-alvo="item-${i}">
         <span class="visor-label">${rotulo}</span>
@@ -82,6 +155,7 @@ function aplicarDadosPagina() {
     box.addEventListener('click', () => definirAlvo(box.dataset.alvo));
   });
 
+  lpGradeDezenasEl.classList.toggle('oculto', cfg.tipo !== 'dezena');
   atualizarVisores();
 }
 
@@ -90,22 +164,24 @@ function definirAlvo(novoAlvo) {
   lpVisoresEl.querySelectorAll('.visor-box').forEach(box => {
     box.classList.toggle('ativo', box.dataset.alvo === novoAlvo);
   });
+  destacarDezenaAtiva();
 }
 
 function atualizarVisores() {
-  const cfg = COTACOES[configPagina.modalidade] || COTACOES.M;
+  const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
   for (let i = 0; i < cfg.qtd; i++) {
     const el = document.getElementById(`lp-disp-${i}`);
     if (!el) continue;
     const val = itensSelecionados[i] || '';
     el.textContent = val ? val.padStart(cfg.maxDigitos, '0') : '--';
   }
+  destacarDezenaAtiva();
 }
 
 document.querySelector('[data-teclado="landing"]').addEventListener('click', e => {
   const btn = e.target.closest('button');
   if (!btn) return;
-  const cfg = COTACOES[configPagina.modalidade] || COTACOES.M;
+  const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
   const idx = Number(alvoAtivo.split('-')[1] || 0);
 
   if (btn.dataset.digito !== undefined) {
@@ -129,10 +205,10 @@ document.querySelector('[data-teclado="landing"]').addEventListener('click', e =
 
 formLandingEl.addEventListener('submit', async e => {
   e.preventDefault();
-  const cfg = COTACOES[configPagina.modalidade] || COTACOES.M;
+  const cfg = COTACOES[configPagina.modalidade] || COTACOES.DZ;
   const selecao = cfg.qtd === 1 ? itensSelecionados[0] : [...itensSelecionados];
 
-  mostrarFeedback('Gerando checkout InfinitePay...', 'sucesso');
+  mostrarFeedback('Verificando checkout...', 'sucesso');
 
   const res = await fetch('/api/checkout/criar', {
     method: 'POST',
@@ -151,7 +227,10 @@ formLandingEl.addEventListener('submit', async e => {
 
   const data = await res.json();
   if (!res.ok) {
-    mostrarFeedback(data.erro || 'Não foi possível iniciar o checkout.', 'erro');
+    mostrarFeedback(
+      data.erro || 'Checkout em pausa/configuração com o banco. Tente novamente em breve.',
+      'erro'
+    );
     return;
   }
 
@@ -186,19 +265,6 @@ async function verificarRetornoPedido() {
   }
 }
 
-async function iniciar() {
-  try {
-    const res = await fetch('/api/catalogo');
-    const data = await res.json();
-    if (data.landingBase && !params.get('titulo')) {
-      configPagina = { ...configPagina, ...data.landingBase };
-    }
-  } catch (e) {
-    // mantém configuração padrão local
-  }
-
-  aplicarDadosPagina();
-  verificarRetornoPedido();
-}
-
-iniciar();
+montarGradeDezenas();
+aplicarDadosPagina();
+verificarRetornoPedido();
