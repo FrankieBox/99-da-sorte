@@ -7,9 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(__dirname));
 
-const DATA_DIR = path.join(__dirname, 'data');
+// Garante que arquivos estáticos na raiz do projeto sejam encontrados
+const RAIZ = __dirname;
+app.use(express.static(RAIZ));
+
+const DATA_DIR = path.join(RAIZ, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
 if (!fs.existsSync(DATA_DIR)) {
@@ -43,7 +46,23 @@ function lerDB() {
     fs.writeFileSync(DB_FILE, JSON.stringify(inicial, null, 2));
     return inicial;
   }
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  try {
+    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  } catch (e) {
+    const fallback = {
+      dataReferencia: new Date().toISOString().split('T')[0],
+      pixProvisorioChave: 'pagamentos.teste@99dasorte.com.br',
+      pixProvisorioRecebedor: '99 DA SORTE TESTE PROVISORIO',
+      concursos: HORARIOS_PADRAO.map(h => ({
+        ...h,
+        resultado: null,
+        atualizadoEm: null
+      })),
+      bilhetes: []
+    };
+    fs.writeFileSync(DB_FILE, JSON.stringify(fallback, null, 2));
+    return fallback;
+  }
 }
 
 function salvarDB(dados) {
@@ -60,8 +79,30 @@ function gerarPayloadPixProvisorio(chave, nome, valor, txid) {
   return `00020126580014BR.GOV.BCB.PIX0136${chave}520400005303986540${valorStr.length}${valorStr}5802BR5925${nome.substring(0, 25)}6009SAO PAULO62140510${txid}6304ABCD`;
 }
 
+function enviarHtmlSeguro(res, nomeArquivo) {
+  const caminho = path.join(RAIZ, nomeArquivo);
+  if (fs.existsSync(caminho)) {
+    return res.sendFile(caminho);
+  }
+  return res.status(404).send(`
+    <body style="background:#050a14;color:#fff;font-family:sans-serif;padding:24px;">
+      <h2>Arquivo ${nomeArquivo} não encontrado na raiz</h2>
+      <p>Verifique se <strong>${nomeArquivo}</strong> está na mesma pasta do <code>server.js</code> no GitHub.</p>
+      <p>Arquivos na raiz: ${fs.readdirSync(RAIZ).join(', ')}</p>
+    </body>
+  `);
+}
+
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'concursos-99.html'));
+  enviarHtmlSeguro(res, 'concursos-99.html');
+});
+
+app.get('/concursos-99.html', (req, res) => {
+  enviarHtmlSeguro(res, 'concursos-99.html');
+});
+
+app.get('/adm.html', (req, res) => {
+  enviarHtmlSeguro(res, 'adm.html');
 });
 
 app.get('/api/estado', (req, res) => {
