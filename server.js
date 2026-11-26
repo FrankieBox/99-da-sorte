@@ -493,13 +493,34 @@ app.get('/api/bilhete/:id', (req, res) => {
   }
 });
 
-// Banco de agentes de aquecimento
+// Banco de agentes de aquecimento e controle liga/desliga
 app.get('/api/agentes', (req, res) => {
   try {
     const configAgentes = lerJSON(AGENTES_PATH);
     res.json(configAgentes);
   } catch (err) {
     res.status(500).json({ erro: 'Falha ao ler agentes.json' });
+  }
+});
+
+app.post('/api/agentes/toggle', (req, res) => {
+  const chaveEnviada = req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin);
+  if (chaveEnviada !== ADMIN_CHAVE) {
+    return res.status(401).json({ erro: 'Acesso não autorizado.' });
+  }
+
+  try {
+    const configAgentes = lerJSON(AGENTES_PATH);
+    const novoEstado =
+      req.body && typeof req.body.ativoGlobal === 'boolean'
+        ? req.body.ativoGlobal
+        : !configAgentes.ativoGlobal;
+
+    configAgentes.ativoGlobal = novoEstado;
+    salvarJSON(AGENTES_PATH, configAgentes);
+    res.json({ ativoGlobal: configAgentes.ativoGlobal });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao atualizar agentes.json' });
   }
 });
 
