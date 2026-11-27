@@ -15,7 +15,7 @@ const PEDIDOS_PATH = path.join(DATA_DIR, 'pedidos_online.json');
 const RESULTADOS_PATH = path.join(DATA_DIR, 'resultados.json');
 const AGENTES_PATH = path.join(DATA_DIR, 'agentes.json');
 
-const ADMIN_CHAVE = (process.env.ADMIN_KEY || '99dasorte-adm').trim();
+const ADMIN_CHAVE = (process.env.ADMIN_KEY || '627424').trim();
 const INFINITEPAY_HANDLE = (process.env.INFINITEPAY_HANDLE || '').replace(/^\$/, '').trim();
 const INFINITEPAY_API_KEY = (process.env.INFINITEPAY_API_KEY || '').trim();
 const INFINITEPAY_LINKS_URL = 'https://api.checkout.infinitepay.io/links';
@@ -588,7 +588,9 @@ app.get('/api/resultados', (req, res) => {
 });
 
 app.post('/api/resultados', (req, res) => {
-  const chaveEnviada = req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin);
+  const chaveEnviada = String(
+    req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin) || ''
+  ).trim();
   if (chaveEnviada !== ADMIN_CHAVE) {
     return res.status(401).json({ erro: 'Acesso não autorizado para publicar resultado.' });
   }
@@ -712,7 +714,9 @@ app.get('/api/agentes', (req, res) => {
 });
 
 app.post('/api/agentes/toggle', (req, res) => {
-  const chaveEnviada = req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin);
+  const chaveEnviada = String(
+    req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin) || ''
+  ).trim();
   if (chaveEnviada !== ADMIN_CHAVE) {
     return res.status(401).json({ erro: 'Acesso não autorizado.' });
   }
