@@ -1,227 +1,647 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ADM • 99 DA SORTE</title>
+  <meta name="google" content="notranslate" />
+  <title>99 da sorte — Painel ADM &amp; Resultados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
   <style>
-    body {
-      background: #050a14;
-      color: #f1f5f9;
-      font-family: system-ui, -apple-system, sans-serif;
+    :root {
+      --bg-void: #05070d;
+      --bg-panel: #0b1020;
+      --bg-card: #0e152b;
+      --cobalt: #1d4ed8;
+      --cyan-neon: #38bdf8;
+      --lime: #b8ff00;
+      --lime-dark: #071100;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-tech: rgba(56, 189, 248, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
-      padding: 16px;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #0c1738 0%, #03050a 65%);
+      color: var(--text-main);
+      font-family: "Rajdhani", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
+      padding: 12px;
     }
-    .container {
+
+    .adm-shell {
       width: 100%;
-      max-width: 680px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      max-width: 560px;
+      background: var(--bg-void);
+      border: 1px solid rgba(184, 255, 0, 0.28);
+      box-shadow: 0 0 40px rgba(29, 78, 216, 0.28);
+      overflow: hidden;
     }
-    .card {
-      background: #0d192e;
-      border: 1px solid #1e3a6e;
-      border-radius: 12px;
-      padding: 14px;
-    }
-    h1, h2 {
-      margin: 0 0 10px;
-      color: #b4ff00;
-      font-size: 1.1rem;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    input, button {
-      padding: 9px 12px;
-      border-radius: 8px;
-      border: 1px solid #2563eb;
-      font-size: 0.9rem;
-    }
-    input {
-      background: #050a14;
-      color: #fff;
-    }
-    button {
-      background: #b4ff00;
-      color: #050a14;
-      font-weight: 800;
-      border: none;
-      cursor: pointer;
-    }
-    button.sec {
-      background: #2563eb;
-      color: #fff;
-    }
-    .concurso-item {
+
+    .adm-topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #172d54;
+      padding: 13px 16px;
+      background: rgba(5, 7, 13, 0.95);
+      border-bottom: 1px solid var(--border-tech);
+    }
+
+    .adm-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .badge-99 {
+      background: var(--lime);
+      color: var(--lime-dark);
+      font-family: "Orbitron", sans-serif;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 3px 8px;
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+    }
+
+    .adm-title {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+    }
+
+    .status-pill {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--lime);
+      border: 1px solid rgba(184, 255, 0, 0.45);
+      background: rgba(184, 255, 0, 0.08);
+      padding: 4px 9px;
+      border-radius: 999px;
+    }
+
+    .adm-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-tech);
+    }
+
+    .sec-tag {
+      display: block;
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.62rem;
+      color: var(--lime);
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+
+    .sec-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .sec-head h2 {
+      font-family: "Orbitron", sans-serif;
+      font-size: 1.02rem;
+      font-weight: 800;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .campo label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .campo input,
+    .campo select {
+      width: 100%;
+      padding: 10px 11px;
+      background: #050811;
+      border: 1px solid var(--border-tech);
+      color: #ffffff;
+      font-family: "Rajdhani", sans-serif;
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+
+    .campo input:focus,
+    .campo select:focus {
+      outline: none;
+      border-color: var(--lime);
+    }
+
+    .btn-lime {
+      width: 100%;
+      background: var(--lime);
+      color: var(--lime-dark);
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.7px;
+      padding: 12px 16px;
+      border: none;
+      cursor: pointer;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    }
+
+    .btn-lime:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .btn-outline {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 7px 11px;
+      cursor: pointer;
+    }
+
+    .feedback {
+      margin-top: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      min-height: 18px;
+      color: var(--lime);
+    }
+
+    .feedback.erro {
+      color: #f87171;
+    }
+
+    .horarios-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
-    .bilhete-item {
-      background: #081121;
-      border: 1px solid #1e3a6e;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 8px;
-      font-size: 0.88rem;
-      line-height: 1.45;
+
+    .horario-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border-tech);
+      padding: 9px 8px;
+      cursor: pointer;
+      transition: border-color 0.15s;
     }
-    .premiado {
-      border-color: #b4ff00;
-      background: #102612;
+
+    .horario-tile:hover {
+      border-color: var(--lime);
     }
-    .hidden { display: none; }
+
+    .horario-tile.publicado {
+      border-color: var(--lime);
+      background: rgba(184, 255, 0, 0.08);
+    }
+
+    .tile-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .tile-status {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .horario-tile.publicado .tile-status {
+      color: var(--lime);
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.78rem;
+    }
+
+    .ganhadores-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ganhador-card {
+      background: rgba(184, 255, 0, 0.09);
+      border: 1px solid var(--lime);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ganhador-card strong {
+      color: var(--lime);
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.82rem;
+    }
+
+    .ganhador-meta {
+      font-size: 0.84rem;
+      color: #e2e8f0;
+    }
+
+    .vazio-txt {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+    }
+
+    .agentes-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-tech);
+      padding: 11px 12px;
+    }
+
+    .links-rodape {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background: #04060b;
+      font-size: 0.82rem;
+    }
+
+    .links-rodape a {
+      color: var(--cyan-neon);
+      text-decoration: none;
+      font-weight: 700;
+    }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div id="login-box" class="card">
-      <h1>PAINEL ADM • 99 DA SORTE</h1>
-      <div class="row">
-        <input type="password" id="senha-adm" placeholder="Senha ADM" />
-        <button onclick="entrarAdm()">ENTRAR</button>
+<body class="notranslate">
+  <div class="adm-shell">
+    <header class="adm-topbar">
+      <div class="adm-brand">
+        <span class="badge-99">99</span>
+        <span class="adm-title">CENTRAL ADM // RESULTADOS</span>
       </div>
-    </div>
+      <span class="status-pill" id="adm-status-pill">CONECTADO</span>
+    </header>
 
-    <div id="painel-adm" class="hidden">
-      <div class="card" style="margin-bottom:14px;">
-        <div class="row" style="justify-content:space-between;">
-          <h1>CONTROLE DO DIA • 99 DA SORTE</h1>
-          <a href="concursos-99.html" style="color:#93c5fd;font-weight:700;">ABRIR SITE ➔</a>
+    <section class="adm-section">
+      <span class="sec-tag">// LANÇAMENTO OFICIAL (CORCEL BRANCO → 99 DA SORTE)</span>
+      <div class="sec-head">
+        <h2>PUBLICAR RESULTADO</h2>
+        <button type="button" class="btn-outline" id="btn-recarregar-tudo">↻ ATUALIZAR</button>
+      </div>
+
+      <form id="form-publicar-resultado">
+        <div class="campo">
+          <label for="adm-chave">Chave Administrativa (ADMIN_KEY)</label>
+          <input
+            type="password"
+            id="adm-chave"
+            placeholder="Digite a chave ADM (padrão: 627424)"
+            required
+          />
         </div>
-        <div class="row">
-          <input type="text" id="pix-chave" placeholder="Chave Pix Provisória" style="flex:1;" />
-          <input type="text" id="pix-recebedor" placeholder="Nome Recebedor" />
-          <button class="sec" onclick="salvarConfigPix()">SALVAR PIX PROVISÓRIO</button>
+
+        <div class="grid-2">
+          <div class="campo">
+            <label for="adm-data">Data do Ciclo</label>
+            <input type="date" id="adm-data" required />
+          </div>
+
+          <div class="campo">
+            <label for="adm-horario">Horário do Concurso</label>
+            <select id="adm-horario" required></select>
+          </div>
         </div>
-      </div>
 
-      <div class="card" style="margin-bottom:14px;">
-        <h2>RESULTADOS DOS CONCURSOS (SINCRONIZA AUTOMÁTICO)</h2>
-        <div id="adm-lista-concursos"></div>
-      </div>
+        <div class="campo">
+          <label for="adm-dezena">Dezena Sorteada (01 a 99 ou 00)</label>
+          <input
+            type="text"
+            id="adm-dezena"
+            maxlength="2"
+            inputmode="numeric"
+            placeholder="Ex: 37 ou 00"
+            required
+          />
+        </div>
 
-      <div class="card">
-        <h2>BILHETES EMITIDOS HOJE (<span id="total-bilhetes">0</span>)</h2>
-        <div id="adm-lista-bilhetes"></div>
+        <button type="submit" id="btn-salvar-resultado" class="btn-lime">
+          SALVAR RESULTADO &amp; CONFERIR BILHETES ➔
+        </button>
+      </form>
+
+      <p id="adm-feedback" class="feedback"></p>
+    </section>
+
+    <section class="adm-section">
+      <span class="sec-tag">// CONFERÊNCIA AUTOMÁTICA</span>
+      <div class="sec-head">
+        <h2>BILHETES PREMIADOS NO HORÁRIO</h2>
       </div>
-    </div>
+      <div id="lista-ganhadores" class="ganhadores-lista">
+        <p class="vazio-txt">Publique um resultado acima para ver os bilhetes que bateram com a dezena.</p>
+      </div>
+    </section>
+
+    <section class="adm-section">
+      <span class="sec-tag">// GRADE DIÁRIA (TOQUE PARA SELECIONAR O HORÁRIO)</span>
+      <div class="sec-head">
+        <h2>RESULTADOS DO DIA</h2>
+        <span id="contador-publicados" class="status-pill">0 / 15 PUBLICADOS</span>
+      </div>
+      <div id="grid-resultados-dia" class="horarios-grid"></div>
+    </section>
+
+    <section class="adm-section">
+      <span class="sec-tag">// PROVA SOCIAL NO MODAL</span>
+      <div class="sec-head">
+        <h2>AGENTES DE AQUECIMENTO</h2>
+      </div>
+      <div class="agentes-bar">
+        <div>
+          <strong id="status-agentes-texto">Verificando status...</strong>
+          <div class="vazio-txt" id="detalhe-agentes-texto">6 perfis configurados em data/agentes.json</div>
+        </div>
+        <button type="button" class="btn-outline" id="btn-toggle-agentes">ALTERNAR</button>
+      </div>
+    </section>
+
+    <footer class="links-rodape">
+      <a href="/concursos-99.html" target="_blank">↗ Abrir Landing Concursos</a>
+      <a href="/produto.html" target="_blank">↗ Abrir Landing Produto</a>
+      <a href="/" target="_blank">↗ Abrir Terminal</a>
+    </footer>
   </div>
 
   <script>
-    let senhaAtual = '';
+    const HORARIOS_CONCURSOS = [
+      '08:10', '09:10', '10:10', '11:10', '12:10',
+      '13:10', '14:10', '15:10', '16:10', '17:10',
+      '18:10', '19:10', '19:45', '20:50', '21:10'
+    ];
 
-    async function entrarAdm() {
-      senhaAtual = document.getElementById('senha-adm').value;
-      const ok = await carregarDadosAdm();
-      if (ok) {
-        document.getElementById('login-box').classList.add('hidden');
-        document.getElementById('painel-adm').classList.remove('hidden');
-      } else {
-        alert('Senha incorreta.');
+    const chaveEl = document.getElementById('adm-chave');
+    const dataEl = document.getElementById('adm-data');
+    const horarioEl = document.getElementById('adm-horario');
+    const dezenaEl = document.getElementById('adm-dezena');
+    const formEl = document.getElementById('form-publicar-resultado');
+    const btnSalvarEl = document.getElementById('btn-salvar-resultado');
+    const feedbackEl = document.getElementById('adm-feedback');
+    const listaGanhadoresEl = document.getElementById('lista-ganhadores');
+    const gridDiaEl = document.getElementById('grid-resultados-dia');
+    const contadorPubEl = document.getElementById('contador-publicados');
+    const btnRecarregarEl = document.getElementById('btn-recarregar-tudo');
+    const statusAgentesEl = document.getElementById('status-agentes-texto');
+    const detalheAgentesEl = document.getElementById('detalhe-agentes-texto');
+    const btnToggleAgentesEl = document.getElementById('btn-toggle-agentes');
+
+    let agentesAtivos = true;
+
+    function limparChaveHeader(valor) {
+      return String(valor || '')
+        .replace(/[^\x20-\x7E\xA0-\xFF]/g, '')
+        .trim();
+    }
+
+    function normalizarHorario(valor) {
+      const match = String(valor || '').match(/(\d{2}:\d{2})/);
+      return match ? match[1] : String(valor || '').trim();
+    }
+
+    function inicializarFormulario() {
+      const hoje = new Date().toISOString().slice(0, 10);
+      dataEl.value = hoje;
+
+      const chaveSalva = limparChaveHeader(localStorage.getItem('99_adm_key'));
+      chaveEl.value = chaveSalva || '627424';
+
+      horarioEl.innerHTML = HORARIOS_CONCURSOS.map(
+        (h, i) => `<option value="${h}">#${String(i + 1).padStart(2, '0')} • ${h}</option>`
+      ).join('');
+    }
+
+    function mostrarFeedback(msg, erro = false) {
+      feedbackEl.textContent = msg;
+      feedbackEl.className = erro ? 'feedback erro' : 'feedback';
+    }
+
+    async function carregarPainelDia() {
+      try {
+        const dataSelecionada = dataEl.value;
+        const res = await fetch(`/api/resultados?data=${encodeURIComponent(dataSelecionada)}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const payload = await res.json();
+
+        const mapaDia = {};
+        for (const r of payload.resultados || []) {
+          const hNorm = normalizarHorario(r.horario);
+          if (hNorm) mapaDia[hNorm] = r;
+        }
+
+        const publicadosCount = Object.keys(mapaDia).length;
+        contadorPubEl.textContent = `${publicadosCount} / ${HORARIOS_CONCURSOS.length} PUBLICADOS`;
+
+        gridDiaEl.innerHTML = HORARIOS_CONCURSOS.map(h => {
+          const item = mapaDia[h];
+          return `
+            <div class="horario-tile ${item ? 'publicado' : ''}" data-h="${h}">
+              <div class="tile-top">
+                <span>${h}</span>
+                <span>${item ? '✓' : '•'}</span>
+              </div>
+              <div class="tile-status">
+                ${item ? `DZ ${item.dezena} (G${item.grupo})` : 'Aguardando'}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        gridDiaEl.querySelectorAll('.horario-tile').forEach(tile => {
+          tile.addEventListener('click', () => {
+            horarioEl.value = tile.dataset.h;
+            dezenaEl.focus();
+          });
+        });
+      } catch (err) {
+        mostrarFeedback('Não foi possível atualizar a grade do dia. Verifique se o servidor está online.', true);
       }
     }
 
-    async function carregarDadosAdm() {
-      const resp = await fetch('/api/adm/dados', {
-        headers: { 'x-adm-pass': senhaAtual }
-      });
-      if (!resp.ok) return false;
+    function renderizarGanhadores(lista, resultado) {
+      if (!lista || lista.length === 0) {
+        listaGanhadoresEl.innerHTML = `
+          <p class="vazio-txt">
+            Nenhum bilhete comprado encontrado para a Dezena <strong>${resultado.dezena}</strong> no concurso das <strong>${resultado.horario}</strong> (${resultado.dataCiclo}).
+          </p>
+        `;
+        return;
+      }
 
-      const db = await resp.json();
-      document.getElementById('pix-chave').value = db.pixProvisorioChave || '';
-      document.getElementById('pix-recebedor').value = db.pixProvisorioRecebedor || '';
-
-      const boxConcursos = document.getElementById('adm-lista-concursos');
-      boxConcursos.innerHTML = db.concursos.map(c => `
-        <div class="concurso-item">
-          <div>
-            <strong>#${c.numero} • ${c.horario}</strong><br/>
-            <small>Atual: ${c.resultado ? 'DEZENA ' + c.resultado : 'Aguardando'}</small>
-          </div>
-          <div class="row">
-            <input type="text" id="res-${c.id}" maxlength="2" placeholder="DZ" style="width:65px;text-align:center;" value="${c.resultado || ''}" />
-            <button onclick="lancarResultado('${c.id}')">SALVAR</button>
-          </div>
-        </div>
-      `).join('');
-
-      document.getElementById('total-bilhetes').textContent = db.bilhetes.length;
-      const boxBilhetes = document.getElementById('adm-lista-bilhetes');
-      boxBilhetes.innerHTML = db.bilhetes.slice().reverse().map(b => `
-        <div class="bilhete-item ${b.statusSorteio === 'PREMIADO' ? 'premiado' : ''}">
-          <div class="row" style="justify-content:space-between;">
-            <strong>ID: ${b.id} • Sorteio ${b.horario} • DZ ${b.dezena}</strong>
-            <span>${b.statusSorteio}</span>
-          </div>
-          <div>${b.nome} (${b.telefone})</div>
-          <div class="row" style="justify-content:space-between;margin-top:6px;">
-            <span>Pgto: <strong>${b.statusPagamento}</strong></span>
-            ${b.statusPagamento !== 'PAGO_CONFIRMADO'
-              ? `<button class="sec" onclick="confirmarPgto('${b.id}')">CONFIRMAR PGTO</button>`
-              : '<span>✔ Confirmado</span>'}
-          </div>
-        </div>
-      `).join('');
-
-      return true;
+      listaGanhadoresEl.innerHTML = lista
+        .map(v => {
+          const nome = (v.lead && v.lead.nome) || 'Cliente Terminal';
+          const contato = (v.lead && v.lead.contato) || 'Sem WhatsApp';
+          return `
+            <div class="ganhador-card">
+              <div>
+                <strong>${v.id} • DZ ${resultado.dezena}</strong>
+                <div class="ganhador-meta">${nome} • ${contato}</div>
+              </div>
+              <span>R$ ${Number(v.valor || 0).toFixed(2)}</span>
+            </div>
+          `;
+        })
+        .join('');
     }
 
-    async function lancarResultado(concursoId) {
-      const dz = document.getElementById(`res-${concursoId}`).value.trim();
-      const resp = await fetch('/api/adm/resultado', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-adm-pass': senhaAtual
-        },
-        body: JSON.stringify({ concursoId, dezenaSorteada: dz })
-      });
-      if (resp.ok) {
-        alert('Resultado sincronizado!');
-        carregarDadosAdm();
+    async function carregarAgentesStatus() {
+      try {
+        const res = await fetch('/api/agentes');
+        if (!res.ok) return;
+        const cfg = await res.json();
+        agentesAtivos = Boolean(cfg.ativoGlobal);
+        const qtd = Array.isArray(cfg.agentes) ? cfg.agentes.length : 0;
+        statusAgentesEl.textContent = agentesAtivos ? '● ATIVO NO MODAL' : '○ PAUSADO';
+        statusAgentesEl.style.color = agentesAtivos ? '#b8ff00' : '#94a3b8';
+        detalheAgentesEl.textContent = `${qtd} perfis • intervalo ${cfg.intervaloMinSegundos || 8}s–${cfg.intervaloMaxSegundos || 16}s`;
+      } catch (err) {
+        // Ignora falha pontual na leitura dos agentes
       }
     }
 
-    async function confirmarPgto(bilheteId) {
-      const resp = await fetch('/api/adm/confirmar-pagamento', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-adm-pass': senhaAtual
-        },
-        body: JSON.stringify({ bilheteId })
-      });
-      if (resp.ok) {
-        carregarDadosAdm();
+    btnToggleAgentesEl.addEventListener('click', async () => {
+      const chave = limparChaveHeader(chaveEl.value);
+      if (!chave) {
+        mostrarFeedback('Informe a Chave Administrativa antes de alterar os agentes.', true);
+        chaveEl.focus();
+        return;
       }
-    }
+      chaveEl.value = chave;
+      localStorage.setItem('99_adm_key', chave);
 
-    async function salvarConfigPix() {
-      const chave = document.getElementById('pix-chave').value;
-      const recebedor = document.getElementById('pix-recebedor').value;
-      const resp = await fetch('/api/adm/config-pix', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-adm-pass': senhaAtual
-        },
-        body: JSON.stringify({ chave, recebedor })
-      });
-      if (resp.ok) {
-        alert('Dados do QR Code Provisório atualizados!');
+      try {
+        const res = await fetch('/api/agentes/toggle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': chave
+          },
+          body: JSON.stringify({ ativoGlobal: !agentesAtivos, chaveAdmin: chave })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          mostrarFeedback(data.erro || 'Não foi possível alterar os agentes.', true);
+          return;
+        }
+
+        mostrarFeedback(
+          data.ativoGlobal ? 'Agentes de aquecimento ativados!' : 'Agentes de aquecimento pausados!'
+        );
+        await carregarAgentesStatus();
+      } catch (err) {
+        mostrarFeedback('Falha de comunicação ao alternar agentes.', true);
       }
-    }
+    });
+
+    formEl.addEventListener('submit', async e => {
+      e.preventDefault();
+      const chave = limparChaveHeader(chaveEl.value);
+      if (!chave) {
+        mostrarFeedback('Digite uma chave administrativa válida.', true);
+        return;
+      }
+      chaveEl.value = chave;
+      localStorage.setItem('99_adm_key', chave);
+
+      btnSalvarEl.disabled = true;
+      mostrarFeedback('Publicando resultado...');
+
+      try {
+        const res = await fetch('/api/resultados', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': chave
+          },
+          body: JSON.stringify({
+            dataCiclo: dataEl.value,
+            horario: normalizarHorario(horarioEl.value),
+            dezena: dezenaEl.value.trim(),
+            chaveAdmin: chave
+          })
+        });
+
+        const textoBruto = await res.text();
+        let data = {};
+        try {
+          data = textoBruto ? JSON.parse(textoBruto) : {};
+        } catch (_) {
+          throw new Error('Resposta inválida do servidor.');
+        }
+
+        if (!res.ok) {
+          mostrarFeedback(data.erro || `Erro ao publicar resultado (HTTP ${res.status}).`, true);
+          return;
+        }
+
+        mostrarFeedback(
+          `Resultado publicado: ${data.resultado.horario} → Dezena ${data.resultado.dezena} (Grupo ${data.resultado.grupo})`
+        );
+        dezenaEl.value = '';
+        renderizarGanhadores(data.possiveisGanhadores, data.resultado);
+        await carregarPainelDia();
+      } catch (err) {
+        mostrarFeedback(err.message || 'Falha de rede ao publicar resultado.', true);
+      } finally {
+        btnSalvarEl.disabled = false;
+      }
+    });
+
+    dataEl.addEventListener('change', carregarPainelDia);
+    btnRecarregarEl.addEventListener('click', () => {
+      carregarPainelDia();
+      carregarAgentesStatus();
+    });
+
+    inicializarFormulario();
+    carregarPainelDia();
+    carregarAgentesStatus();
   </script>
 </body>
 </html>
