@@ -1,5 +1,23 @@
+const HORARIOS_15_PADRAO = [
+  { id: '0810', numero: '01', horario: '08:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '0910', numero: '02', horario: '09:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1010', numero: '03', horario: '10:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1110', numero: '04', horario: '11:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1210', numero: '05', horario: '12:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1310', numero: '06', horario: '13:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1410', numero: '07', horario: '14:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1510', numero: '08', horario: '15:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1610', numero: '09', horario: '16:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1710', numero: '10', horario: '17:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1810', numero: '11', horario: '18:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1910', numero: '12', horario: '19:10', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '1945', numero: '13', horario: '19:45', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '2050', numero: '14', horario: '20:50', premio: 'R$ 50,00', valor: 2.5 },
+  { id: '2110', numero: '15', horario: '21:10', premio: 'R$ 50,00', valor: 2.5 }
+];
+
 let estadoApp = {
-  concursos: [],
+  concursos: HORARIOS_15_PADRAO.map(h => ({ ...h, resultado: null })),
   atividadeRecente: [],
   agentesConfig: {
     ativoGlobal: true,
@@ -15,15 +33,43 @@ let intervaloCronometro = null;
 let timerBalao = null;
 let indiceBalao = 0;
 
+// Controle do carrossel infinito com movimento manual + retorno automático
+let animacaoCarrosselId = null;
+let pausaManualAte = 0;
+let modoPausadoManual = false;
+let arrastandoCarrossel = false;
+let inicioXArrasto = 0;
+let scrollInicialArrasto = 0;
+let moveuDuranteArrasto = false;
+
 document.addEventListener('DOMContentLoaded', () => {
   gerarGridDezenas();
   configurarQrCodeRodape();
+  configurarControlesCarrossel();
+  renderizarGradeConcursos();
+  iniciarLoopCarrossel();
   carregarEstadoServidor();
   configurarEventos();
 
   setInterval(carregarEstadoServidor, 15000);
   agendarProximoBalao();
 });
+
+function obterConcursos15() {
+  const mapaServidor = new Map(
+    (estadoApp.concursos || []).map(c => [String(c.horario), c])
+  );
+
+  return HORARIOS_15_PADRAO.map((base, idx) => {
+    const servidor = mapaServidor.get(base.horario) || (estadoApp.concursos && estadoApp.concursos[idx]) || {};
+    return {
+      ...base,
+      resultado: servidor.resultado || null,
+      valor: Number(servidor.valor || base.valor),
+      premio: 'R$ 50,00'
+    };
+  });
+}
 
 function configurarQrCodeRodape() {
   const urlAtual = window.location.origin;
@@ -36,6 +82,7 @@ function configurarQrCodeRodape() {
 async function carregarEstadoServidor() {
   try {
     const resp = await fetch('/api/estado');
+    if (!resp.ok) return;
     const dados = await resp.json();
     estadoApp = {
       ...estadoApp,
@@ -45,7 +92,8 @@ async function carregarEstadoServidor() {
     rotacionarBalaoAgente();
 
     if (concursoSelecionado) {
-      const atualizado = estadoApp.concursos.find(c => c.id === concursoSelecionado.id);
+      const listaAtual = obterConcursos15();
+      const atualizado = listaAtual.find(c => c.id === concursoSelecionado.id || c.horario === concursoSelecionado.horario);
       if (atualizado) {
         concursoSelecionado = atualizado;
         atualizarTextoResultadoModal(atualizado);
@@ -80,17 +128,143 @@ function montarCardConcursoHtml(c) {
 
 function renderizarGradeConcursos() {
   const container = document.getElementById('lista-concursos');
-  if (!container) return;
+  const viewport = document.getElementById('carrossel-concursos');
+  if (!container || !viewport) return;
 
-  if (!estadoApp.concursos || estadoApp.concursos.length === 0) {
-    container.innerHTML = '';
-    return;
+  const lista = obterConcursos15();
+  const scrollAnterior = viewport.scrollLeft;
+
+  container.innerHTML = lista.map(montarCardConcursoHtml).join('') + lista.map(montarCardConcursoHtml).join('');
+
+  if (scrollAnterior > 0) {
+    viewport.scrollLeft = scrollAnterior;
+  }
+}
+
+function pausarTemporariamente(ms = 3500) {
+  pausaManualAte = Date.now() + ms;
+}
+
+function normalizarScrollInfinito(viewport, container) {
+  const metade = container.scrollWidth / 2;
+  if (!metade) return;
+
+  if (viewport.scrollLeft >= metade) {
+    viewport.scrollLeft -= metade;
+  } else if (viewport.scrollLeft <= 0) {
+    viewport.scrollLeft += metade;
+  }
+}
+
+function configurarControlesCarrossel() {
+  const viewport = document.getElementById('carrossel-concursos');
+  const container = document.getElementById('lista-concursos');
+  const btnPrev = document.getElementById('btn-carrossel-prev');
+  const btnNext = document.getElementById('btn-carrossel-next');
+  const btnToggle = document.getElementById('btn-carrossel-toggle');
+
+  if (!viewport || !container) return;
+
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      pausarTemporariamente(4000);
+      viewport.scrollLeft -= 210;
+      normalizarScrollInfinito(viewport, container);
+    });
   }
 
-  // Duplica a sequência para manter o loop contínuo sem salto visual
-  const cardsOriginais = estadoApp.concursos.map(montarCardConcursoHtml).join('');
-  const cardsDuplicados = estadoApp.concursos.map(montarCardConcursoHtml).join('');
-  container.innerHTML = cardsOriginais + cardsDuplicados;
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      pausarTemporariamente(4000);
+      viewport.scrollLeft += 210;
+      normalizarScrollInfinito(viewport, container);
+    });
+  }
+
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      modoPausadoManual = !modoPausadoManual;
+      if (!modoPausadoManual) {
+        pausaManualAte = 0;
+        btnToggle.textContent = '⏸ PAUSAR';
+        btnToggle.classList.remove('ativo');
+      } else {
+        btnToggle.textContent = '▶ RODAR';
+        btnToggle.classList.add('ativo');
+      }
+    });
+  }
+
+  viewport.addEventListener('pointerdown', e => {
+    arrastandoCarrossel = true;
+    moveuDuranteArrasto = false;
+    inicioXArrasto = e.clientX;
+    scrollInicialArrasto = viewport.scrollLeft;
+    pausarTemporariamente(5000);
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (!arrastandoCarrossel) return;
+    const delta = e.clientX - inicioXArrasto;
+    if (Math.abs(delta) > 4) {
+      moveuDuranteArrasto = true;
+    }
+    viewport.scrollLeft = scrollInicialArrasto - delta;
+    normalizarScrollInfinito(viewport, container);
+  });
+
+  window.addEventListener('pointerup', () => {
+    if (!arrastandoCarrossel) return;
+    arrastandoCarrossel = false;
+    pausarTemporariamente(3500);
+    if (moveuDuranteArrasto) {
+      const bloquearClique = ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      container.addEventListener('click', bloquearClique, { capture: true, once: true });
+      setTimeout(() => {
+        container.removeEventListener('click', bloquearClique, { capture: true });
+      }, 60);
+    }
+  });
+
+  viewport.addEventListener('wheel', () => {
+    pausarTemporariamente(3500);
+    normalizarScrollInfinito(viewport, container);
+  }, { passive: true });
+}
+
+function iniciarLoopCarrossel() {
+  if (animacaoCarrosselId) cancelAnimationFrame(animacaoCarrosselId);
+
+  let ultimoTempo = performance.now();
+  const velocidadePxPorSegundo = 34;
+
+  function passo(agora) {
+    const dt = Math.min(0.05, (agora - ultimoTempo) / 1000);
+    ultimoTempo = agora;
+
+    const viewport = document.getElementById('carrossel-concursos');
+    const container = document.getElementById('lista-concursos');
+    const modalAberto = !document.getElementById('modal-sorteio')?.classList.contains('hidden');
+
+    if (
+      viewport &&
+      container &&
+      !modoPausadoManual &&
+      !arrastandoCarrossel &&
+      !modalAberto &&
+      Date.now() >= pausaManualAte
+    ) {
+      viewport.scrollLeft += velocidadePxPorSegundo * dt;
+      normalizarScrollInfinito(viewport, container);
+    }
+
+    animacaoCarrosselId = requestAnimationFrame(passo);
+  }
+
+  animacaoCarrosselId = requestAnimationFrame(passo);
 }
 
 function gerarGridDezenas() {
@@ -115,7 +289,8 @@ window.selecionarDezena = function (dz) {
 };
 
 window.abrirModalConcurso = function (concursoId) {
-  const concurso = estadoApp.concursos.find(c => c.id === concursoId);
+  const lista = obterConcursos15();
+  const concurso = lista.find(c => c.id === concursoId);
   if (!concurso) return;
 
   concursoSelecionado = concurso;
@@ -123,7 +298,7 @@ window.abrirModalConcurso = function (concursoId) {
   document.getElementById('display-dezena-escolhida').textContent = '(01-00) --';
   document.querySelectorAll('.dz-btn').forEach(b => b.classList.remove('selecionada'));
 
-  document.getElementById('modal-concurso-tag').textContent = `CONCURSO #${concurso.numero} • GRADE HORÁRIA`;
+  document.getElementById('modal-concurso-tag').textContent = `CONCURSO #${concurso.numero} • PRÊMIO ${concurso.premio}`;
   document.getElementById('modal-horario').textContent = concurso.horario;
   atualizarTextoResultadoModal(concurso);
   rotacionarBalaoAgente();
@@ -182,9 +357,8 @@ function montarListaBaloes() {
     ? cfg.agentes.filter(ag => ag.ativo !== false)
     : [];
 
-  const horarios = estadoApp.concursos.length > 0
-    ? estadoApp.concursos.map(c => c.horario)
-    : ['08:10', '10:10', '14:10', '18:10'];
+  const lista15 = obterConcursos15();
+  const horarios = lista15.map(c => c.horario);
 
   return ativos.map((ag, idx) => {
     const prefs = Array.isArray(ag.dezenasPreferidas) && ag.dezenasPreferidas.length > 0
