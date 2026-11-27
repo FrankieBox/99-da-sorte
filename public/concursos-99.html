@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="google" content="notranslate" />
   <title>99 DA SORTE // TURBO GRID</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="concursos-99.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="notranslate">
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
@@ -16,18 +18,25 @@
         <span class="brand-divider">//</span>
         <span class="brand-branco">TURBO GRID</span>
       </div>
-      <button class="btn-consulta-top" id="btn-abrir-consulta" title="Consultar meu bilhete">
+      <button type="button" class="btn-consulta-top" id="btn-abrir-consulta" title="Consultar meu bilhete">
         🔍 BILHETE
       </button>
     </header>
 
     <section class="hero-card">
-      <img src="kwid-99.jpg" alt="99 da Sorte Kwid" class="hero-bg-img" />
+      <img
+        src="kwid-99.jpg"
+        alt="99 da Sorte Kwid"
+        class="hero-bg-img"
+        onerror="this.style.display='none'"
+      />
       <div class="hero-overlay"></div>
       <div class="hero-conteudo">
         <div class="hero-badge">EDIÇÃO DIÁRIA • 01 A 00</div>
         <h1>ESCOLHA SEU HORÁRIO E GARANTA SUA DEZENA</h1>
-        <p>Bilhete a <strong>R$ 2,50</strong> • Pagamento instantâneo via QR Code Provisório para testes e validação.</p>
+        <p>
+          Bilhete a <strong>R$ 2,50</strong> • Prêmio de <strong>R$ 50,00</strong> • Pagamento instantâneo via QR Code Provisório para testes e validação.
+        </p>
       </div>
     </section>
 
@@ -36,16 +45,25 @@
         <span>GRADE DE SORTEIOS DO DIA</span>
         <span class="live-dot">● LOOP AO VIVO</span>
       </div>
-      <div class="carrossel-viewport" id="carrossel-concursos">
+
+      <div class="carrossel-controles">
+        <div class="carrossel-botoes">
+          <button type="button" id="btn-carrossel-prev" class="btn-carrossel-ctrl" aria-label="Anterior">◀</button>
+          <button type="button" id="btn-carrossel-next" class="btn-carrossel-ctrl" aria-label="Próximo">▶</button>
+          <button type="button" id="btn-carrossel-toggle" class="btn-carrossel-ctrl">⏸ PAUSAR</button>
+        </div>
+      </div>
+
+      <div id="carrossel-concursos" class="carrossel-viewport">
         <div id="lista-concursos" class="carrossel-trilha"></div>
       </div>
     </main>
 
-    <section class="consulta-box" id="secao-consulta">
+    <section id="secao-consulta" class="consulta-box">
       <div class="consulta-title">CONSULTAR BILHETE POR ID</div>
       <div class="consulta-form">
         <input type="text" id="input-busca-id" placeholder="Ex: 99S-A1B2C3" maxlength="12" />
-        <button id="btn-buscar-id">VERIFICAR</button>
+        <button type="button" id="btn-buscar-id">VERIFICAR</button>
       </div>
       <div id="resultado-consulta" class="resultado-consulta hidden"></div>
     </section>
@@ -56,13 +74,14 @@
           <span class="footer-tag">CHAME OS AMIGOS</span>
           <h3>COMPARTILHE O TURBO GRID</h3>
           <p>Aponte a câmera ou envie o link para a galera escolher a dezena da sorte no próximo horário.</p>
-          <button id="btn-copiar-link" class="btn-share">COPIAR LINK DE CONVITE</button>
+          <button type="button" id="btn-copiar-link" class="btn-share">COPIAR LINK DE CONVITE</button>
         </div>
         <div class="footer-qr">
           <img id="qr-convite-amigos" alt="QR Code Convite Amigos" />
           <span>SCAN &amp; JOGUE</span>
         </div>
       </div>
+
       <div class="footer-bottom">
         <span>99 DA SORTE • AMBIENTE DE TESTE PROVISÓRIO</span>
         <a href="adm.html" class="link-adm">PAINEL ADM</a>
@@ -70,11 +89,11 @@
     </footer>
   </div>
 
-  <div id="modal-sorteio" class="modal-overlay hidden">
+  <div id="modal-sorteio" class="modal-overlay hidden" role="dialog" aria-modal="true">
     <div class="modal-frame">
       <div class="modal-top-bar">
-        <span id="modal-concurso-tag">CONCURSO #01 • GRADE HORÁRIA</span>
-        <button id="btn-fechar-modal" class="btn-close">✕</button>
+        <span id="modal-concurso-tag">CONCURSO #01 • PRÊMIO R$ 50,00</span>
+        <button type="button" id="btn-fechar-modal" class="btn-close" aria-label="Fechar">✕</button>
       </div>
 
       <div class="modal-body">
@@ -91,18 +110,18 @@
           <div id="modal-ultimo-resultado" class="valor-resultado">Aguardando apuração</div>
         </div>
 
-        <div id="slot-agentes-futuro" class="slot-agentes">
+        <div id="slot-agentes-futuro" class="slot-agentes" data-social-proof-slot="reservado">
           <div class="wa-bubble" id="wa-bubble-card">
             <div class="wa-icon">
               <svg viewBox="0 0 32 32" width="22" height="22" fill="#ffffff">
-                <path d="M16 3C8.82 3 3 8.82 3 16c0 2.29.6 4.52 1.74 6.49L3 29l6.69-1.71A12.93 12.93 0 0 0 16 29c7.18 0 13-5.82 13-13S23.18 3 16 3zm7.56 18.37c-.32.9-1.86 1.72-2.57 1.83-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.87-1.67-6.4-5.58-6.59-5.84-.19-.26-1.57-2.09-1.57-3.99 0-1.9.99-2.83 1.35-3.22.35-.39.77-.49 1.03-.49.26 0 .51 0 .74.01.24.01.56-.09.87.67.32.77 1.09 2.66 1.19 2.85.1.19.16.42.03.68-.13.26-.19.42-.39.65-.19.23-.41.51-.58.68-.19.19-.39.4-.17.78.23.39 1.01 1.66 2.16 2.69 1.49 1.32 2.74 1.73 3.13 1.92.39.19.61.16.84-.1.23-.26.97-1.13 1.23-1.52.26-.39.51-.32.87-.19.35.13 2.25 1.06 2.64 1.26.39.19.64.29.74.45.09.16.09.94-.23 1.84z"/>
+                <path d="M16 3C8.82 3 3 8.82 3 16c0 2.29.6 4.52 1.74 6.49L3 29l6.69-1.71A12.93 12.93 0 0 0 16 29c7.18 0 13-5.82 13-13S23.18 3 16 3zm7.56 18.37c-.32.9-1.86 1.72-2.57 1.83-.66.1-1.5.14-2.42-.15-.56-.18-1.28-.42-2.2-.82-3.87-1.67-6.4-5.58-6.59-5.84-.19-.26-1.57-2.09-1.57-3.99 0-1.9.99-2.83 1.35-3.22.35-.39.77-.49 1.03-.49.26 0 .51 0 .74.01.24.01.56-.09.87.67.32.77 1.09 2.66 1.19 2.85.1.19.16.42.03.68-.13.26-.19.42-.39.65-.19.23-.41.51-.58.68-.19.19-.39.4-.17.78.23.39 1.01 1.66 2.16 2.69 1.49 1.32 2.74 1.73 3.13 1.92.39.19.61.16.84-.1.23-.26.97-1.13 1.23-1.52.26-.39.51-.32.87-.19.35.13 2.25 1.06 2.64 1.26.39.19.64.29.74.45.09.16.09.94-.23 1.84z" />
               </svg>
             </div>
             <div class="wa-text">
-              <strong id="wa-nome">Patrícia S. (Vila Nova)</strong>
+              <strong id="wa-nome">Lucas M. (Zona Sul)</strong>
               <span id="wa-acao">reservou no sorteio das 08:10</span>
             </div>
-            <div class="wa-badge" id="wa-dezena">DZ 68</div>
+            <div class="wa-badge" id="wa-dezena">DZ 27</div>
           </div>
         </div>
 
@@ -129,11 +148,11 @@
     </div>
   </div>
 
-  <div id="modal-pix" class="modal-overlay hidden">
+  <div id="modal-pix" class="modal-overlay hidden" role="dialog" aria-modal="true">
     <div class="modal-frame pix-frame">
       <div class="modal-top-bar">
         <span>PAGAMENTO PROVISÓRIO • BILHETE GERADO</span>
-        <button id="btn-fechar-pix" class="btn-close">✕</button>
+        <button type="button" id="btn-fechar-pix" class="btn-close" aria-label="Fechar">✕</button>
       </div>
       <div class="modal-body pix-body">
         <div class="ticket-id-banner">
