@@ -243,13 +243,13 @@
     </div>
   </div>
 
-  <!-- TELINHA DE CHECKOUT / PAGAMENTO PROVISÓRIO VIA QR CODE -->
+  <!-- TELINHA DE CHECKOUT PROVISÓRIO (QR CODE + PIX COPIA E COLA) -->
   <div id="modal-checkout" class="cyber-modal oculto" role="dialog" aria-modal="true">
     <div class="cyber-modal-card checkout-card">
       <div class="modal-top">
         <div>
-          <span class="modal-tag">// CHECKOUT PROVISÓRIO • QR CODE</span>
-          <h3>PAGAMENTO DO BILHETE</h3>
+          <span class="modal-tag">// CHECKOUT PROVISÓRIO • PIX</span>
+          <h3>PAGAR BILHETE • R$ 2,50</h3>
         </div>
         <button type="button" id="btn-fechar-checkout" class="btn-modal-close">✕</button>
       </div>
@@ -264,28 +264,35 @@
           <strong id="chk-concurso-dz">--</strong>
         </div>
         <div class="checkout-linha">
-          <span>Valor a pagar:</span>
+          <span>Valor:</span>
           <strong class="destaque-lime">R$ 2,50</strong>
         </div>
         <div class="checkout-linha">
-          <span>Status atual:</span>
+          <span>Status Pix:</span>
           <strong id="chk-status-pagamento" class="status-pendente">PENDENTE</strong>
         </div>
       </div>
 
       <div class="checkout-qr-area">
-        <img id="chk-qr-img" src="" alt="QR Code provisório para pagamento de R$ 2,50" />
+        <img id="chk-qr-img" src="" alt="QR Code provisório Pix R$ 2,50" />
+        <div class="checkout-pix-box">
+          <label for="chk-pix-copia-cola">PIX COPIA E COLA (PROVISÓRIO)</label>
+          <textarea id="chk-pix-copia-cola" class="checkout-pix-codigo" readonly></textarea>
+          <button type="button" id="btn-chk-copiar-pix" class="btn-cyber-mini full-mini">
+            📋 COPIAR CÓDIGO PIX
+          </button>
+        </div>
         <p class="checkout-instrucao">
-          Escaneie o QR Code provisório acima com seu app bancário para pagar <strong>R$ 2,50</strong> enquanto o checkout oficial do banco está em pausa. Após o pagamento, a confirmação fica como <strong>PAGO</strong> no painel ADM.
+          Escaneie o QR Code ou copie o código Pix acima para pagar <strong>R$ 2,50</strong>. Após a conferência, o status muda para <strong>PAGO</strong> no financeiro.
         </p>
       </div>
 
       <div class="checkout-acoes">
         <button type="button" id="btn-chk-copiar-id" class="btn-cyber-mini full-mini">
-          📋 COPIAR ID DO BILHETE
+          🪪 COPIAR ID DO BILHETE
         </button>
         <a href="/membros.html" class="btn-cyber-primary full">
-          <span>IR PARA ÁREA DE MEMBROS</span>
+          <span>VER NA ÁREA DE MEMBROS</span>
           <span class="btn-arrow">➔</span>
         </a>
       </div>
@@ -297,4 +304,3 @@
   <script src="concursos-99.js"></script>
 </body>
 </html>
-a
