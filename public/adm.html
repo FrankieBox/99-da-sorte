@@ -91,6 +91,7 @@
       background: rgba(184, 255, 0, 0.08);
       padding: 4px 9px;
       border-radius: 999px;
+      white-space: nowrap;
     }
 
     .adm-section {
@@ -214,15 +215,24 @@
       padding: 9px 8px;
       cursor: pointer;
       transition: border-color 0.15s;
+      text-align: left;
+      color: var(--text-main);
     }
 
     .horario-tile:hover {
       border-color: var(--lime);
     }
 
-    .horario-tile.publicado {
+    .horario-tile.publicado,
+    .horario-tile.ativo-adm {
       border-color: var(--lime);
       background: rgba(184, 255, 0, 0.08);
+    }
+
+    .horario-tile.inativo-adm {
+      border-color: rgba(148, 163, 184, 0.25);
+      background: rgba(15, 23, 42, 0.55);
+      opacity: 0.78;
     }
 
     .tile-top {
@@ -230,21 +240,23 @@
       justify-content: space-between;
       align-items: center;
       font-family: "Orbitron", sans-serif;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       font-weight: 800;
       margin-bottom: 4px;
+      gap: 4px;
     }
 
     .tile-status {
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: var(--text-muted);
     }
 
-    .horario-tile.publicado .tile-status {
+    .horario-tile.publicado .tile-status,
+    .horario-tile.ativo-adm .tile-status {
       color: var(--lime);
       font-family: "Orbitron", sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
     }
 
     .ganhadores-lista {
@@ -316,6 +328,7 @@
       <span class="status-pill" id="adm-status-pill">CONECTADO</span>
     </header>
 
+    <!-- 1. CHAVE + PUBLICAÇÃO RÁPIDA DE RESULTADO -->
     <section class="adm-section">
       <span class="sec-tag">// LANÇAMENTO OFICIAL (CORCEL BRANCO → 99 DA SORTE)</span>
       <div class="sec-head">
@@ -366,6 +379,17 @@
       <p id="adm-feedback" class="feedback"></p>
     </section>
 
+    <!-- 2. CONCURSOS ATIVOS NA LANDING PAGE -->
+    <section class="adm-section">
+      <span class="sec-tag">// VISIBILIDADE NA LANDING PAGE (TOQUE PARA LIGAR / DESLIGAR)</span>
+      <div class="sec-head">
+        <h2>CONCURSOS ATIVOS</h2>
+        <span id="contador-concursos-adm" class="status-pill">15 / 15 ATIVOS</span>
+      </div>
+      <div id="grid-concursos-adm" class="horarios-grid"></div>
+    </section>
+
+    <!-- 3. POSSÍVEIS GANHADORES DO ÚLTIMO LANÇAMENTO -->
     <section class="adm-section">
       <span class="sec-tag">// CONFERÊNCIA AUTOMÁTICA</span>
       <div class="sec-head">
@@ -376,6 +400,7 @@
       </div>
     </section>
 
+    <!-- 4. PAINEL DOS 15 RESULTADOS DO DIA -->
     <section class="adm-section">
       <span class="sec-tag">// GRADE DIÁRIA (TOQUE PARA SELECIONAR O HORÁRIO)</span>
       <div class="sec-head">
@@ -385,6 +410,7 @@
       <div id="grid-resultados-dia" class="horarios-grid"></div>
     </section>
 
+    <!-- 5. CONTROLE DO TIME DE AGENTES DE AQUECIMENTO -->
     <section class="adm-section">
       <span class="sec-tag">// PROVA SOCIAL NO MODAL</span>
       <div class="sec-head">
@@ -420,6 +446,8 @@
     const formEl = document.getElementById('form-publicar-resultado');
     const btnSalvarEl = document.getElementById('btn-salvar-resultado');
     const feedbackEl = document.getElementById('adm-feedback');
+    const gridConcursosAdmEl = document.getElementById('grid-concursos-adm');
+    const contadorConcursosAdmEl = document.getElementById('contador-concursos-adm');
     const listaGanhadoresEl = document.getElementById('lista-ganhadores');
     const gridDiaEl = document.getElementById('grid-resultados-dia');
     const contadorPubEl = document.getElementById('contador-publicados');
@@ -430,23 +458,29 @@
 
     let agentesAtivos = true;
 
-    function limparChaveHeader(valor) {
-      return String(valor || '')
-        .replace(/[^\x20-\x7E\xA0-\xFF]/g, '')
-        .trim();
-    }
-
     function normalizarHorario(valor) {
       const match = String(valor || '').match(/(\d{2}:\d{2})/);
       return match ? match[1] : String(valor || '').trim();
     }
 
-    function inicializarFormulario() {
-      const hoje = new Date().toISOString().slice(0, 10);
-      dataEl.value = hoje;
+    function obterChaveAdmin() {
+      const digitada = chaveEl && chaveEl.value ? chaveEl.value.trim() : '';
+      return digitada || '627424';
+    }
 
-      const chaveSalva = limparChaveHeader(localStorage.getItem('99_adm_key'));
-      chaveEl.value = chaveSalva || '627424';
+    function inicializarFormulario() {
+      const agora = new Date();
+      const y = agora.getFullYear();
+      const m = String(agora.getMonth() + 1).padStart(2, '0');
+      const d = String(agora.getDate()).padStart(2, '0');
+      dataEl.value = `${y}-${m}-${d}`;
+
+      const chaveSalva = localStorage.getItem('99_adm_key');
+      if (chaveSalva) {
+        chaveEl.value = chaveSalva;
+      } else if (!chaveEl.value) {
+        chaveEl.value = '627424';
+      }
 
       horarioEl.innerHTML = HORARIOS_CONCURSOS.map(
         (h, i) => `<option value="${h}">#${String(i + 1).padStart(2, '0')} • ${h}</option>`
@@ -456,6 +490,95 @@
     function mostrarFeedback(msg, erro = false) {
       feedbackEl.textContent = msg;
       feedbackEl.className = erro ? 'feedback erro' : 'feedback';
+    }
+
+    function renderizarConcursosAdm(lista) {
+      if (!gridConcursosAdmEl) return;
+      const itens = Array.isArray(lista) && lista.length > 0
+        ? lista
+        : HORARIOS_CONCURSOS.map((horario, idx) => ({
+            id: `C-${String(idx + 1).padStart(2, '0')}`,
+            numero: String(idx + 1).padStart(2, '0'),
+            horario,
+            ativo: true
+          }));
+
+      const ativos = itens.filter(c => c.ativo !== false);
+      if (contadorConcursosAdmEl) {
+        contadorConcursosAdmEl.textContent = `${ativos.length} / ${itens.length} ATIVOS`;
+      }
+
+      gridConcursosAdmEl.innerHTML = itens
+        .map(c => {
+          const ligado = c.ativo !== false;
+          return `
+            <button
+              type="button"
+              class="horario-tile ${ligado ? 'ativo-adm' : 'inativo-adm'}"
+              data-toggle-concurso="${c.id}"
+              data-ativo="${ligado}"
+            >
+              <div class="tile-top">
+                <span>#${c.numero} • ${c.horario}</span>
+                <span>${ligado ? 'ON' : 'OFF'}</span>
+              </div>
+              <div class="tile-status">
+                ${ligado ? 'Ativo na landing' : 'Desativado'}
+              </div>
+            </button>
+          `;
+        })
+        .join('');
+
+      gridConcursosAdmEl.querySelectorAll('[data-toggle-concurso]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const concursoId = btn.dataset.toggleConcurso;
+          const estadoAtual = btn.dataset.ativo === 'true';
+          const chave = obterChaveAdmin();
+          localStorage.setItem('99_adm_key', chave);
+
+          try {
+            const res = await fetch('/api/concursos/toggle', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-admin-key': chave
+              },
+              body: JSON.stringify({
+                concursoId,
+                ativo: !estadoAtual,
+                chaveAdmin: chave
+              })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+              mostrarFeedback(data.erro || 'Não foi possível alternar o concurso.', true);
+              return;
+            }
+
+            if (Array.isArray(data.concursos)) {
+              renderizarConcursosAdm(data.concursos);
+            }
+            mostrarFeedback(
+              `Concurso ${concursoId} ${!estadoAtual ? 'ativado' : 'desativado'} na landing page.`
+            );
+          } catch (err) {
+            mostrarFeedback('Falha de comunicação ao atualizar concurso.', true);
+          }
+        });
+      });
+    }
+
+    async function carregarConcursosAdm() {
+      try {
+        const res = await fetch('/api/concursos/config', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data.concursos)) {
+          renderizarConcursosAdm(data.concursos);
+        }
+      } catch (_) {}
     }
 
     async function carregarPainelDia() {
@@ -545,13 +668,7 @@
     }
 
     btnToggleAgentesEl.addEventListener('click', async () => {
-      const chave = limparChaveHeader(chaveEl.value);
-      if (!chave) {
-        mostrarFeedback('Informe a Chave Administrativa antes de alterar os agentes.', true);
-        chaveEl.focus();
-        return;
-      }
-      chaveEl.value = chave;
+      const chave = obterChaveAdmin();
       localStorage.setItem('99_adm_key', chave);
 
       try {
@@ -581,12 +698,7 @@
 
     formEl.addEventListener('submit', async e => {
       e.preventDefault();
-      const chave = limparChaveHeader(chaveEl.value);
-      if (!chave) {
-        mostrarFeedback('Digite uma chave administrativa válida.', true);
-        return;
-      }
-      chaveEl.value = chave;
+      const chave = obterChaveAdmin();
       localStorage.setItem('99_adm_key', chave);
 
       btnSalvarEl.disabled = true;
@@ -635,11 +747,14 @@
 
     dataEl.addEventListener('change', carregarPainelDia);
     btnRecarregarEl.addEventListener('click', () => {
+      carregarConcursosAdm();
       carregarPainelDia();
       carregarAgentesStatus();
     });
 
     inicializarFormulario();
+    renderizarConcursosAdm();
+    carregarConcursosAdm();
     carregarPainelDia();
     carregarAgentesStatus();
   </script>
