@@ -10,6 +10,7 @@ const PUBLIC_DIR = path.join(RAIZ, 'public');
 const DATA_DIR = path.join(RAIZ, 'data');
 
 const CATALOGO_PATH = path.join(DATA_DIR, 'catalogo.json');
+const CONCURSOS_CFG_PATH = path.join(DATA_DIR, 'concursos_config.json');
 const VENDAS_PATH = path.join(DATA_DIR, 'vendas.json');
 const PEDIDOS_PATH = path.join(DATA_DIR, 'pedidos_online.json');
 const RESULTADOS_PATH = path.join(DATA_DIR, 'resultados.json');
@@ -59,7 +60,7 @@ function gerarTodasDezenas() {
   return lista;
 }
 
-function obterCatalogoConcursos() {
+function obterCatalogoBaseConcursos() {
   return HORARIOS_CONCURSOS.map((horario, idx) => {
     const numero = String(idx + 1).padStart(2, '0');
     return {
@@ -69,9 +70,44 @@ function obterCatalogoConcursos() {
       tipo: idx >= 12 ? 'SESSÃO ESPECIAL' : 'GRADE HORÁRIA',
       modalidade: 'DZ',
       valorBilhete: 2.5,
-      premio: 50.0
+      premio: 50.0,
+      ativo: true
     };
   });
+}
+
+function gerarConfigConcursosPadrao() {
+  const mapa = {};
+  for (const c of obterCatalogoBaseConcursos()) {
+    mapa[c.id] = { ativo: true };
+  }
+  return {
+    atualizadoEm: new Date().toISOString(),
+    concursos: mapa
+  };
+}
+
+function obterCatalogoConcursos() {
+  const base = obterCatalogoBaseConcursos();
+  let cfg = null;
+  try {
+    if (fs.existsSync(CONCURSOS_CFG_PATH)) {
+      cfg = JSON.parse(fs.readFileSync(CONCURSOS_CFG_PATH, 'utf8'));
+    }
+  } catch (_) {
+    cfg = null;
+  }
+
+  const mapa = (cfg && cfg.concursos && typeof cfg.concursos === 'object') ? cfg.concursos : {};
+  return base.map(c => {
+    const itemCfg = mapa[c.id] || mapa[c.horario];
+    const ativo = itemCfg && typeof itemCfg.ativo === 'boolean' ? itemCfg.ativo : true;
+    return { ...c, ativo };
+  });
+}
+
+function obterConcursosAtivadosPeloAdm() {
+  return obterCatalogoConcursos().filter(c => c.ativo !== false);
 }
 
 function obterDataCicloHoje(agora = new Date()) {
@@ -158,7 +194,7 @@ function gerarCatalogoPadrao() {
       valorMinimoCheckout: VALOR_MINIMO_CHECKOUT,
       cotacoes: COTACOES
     },
-    concursos: obterCatalogoConcursos(),
+    concursos: obterConcursosAtivadosPeloAdm(),
     produtos
   };
 }
@@ -185,6 +221,9 @@ function inicializarBancoJSON() {
   }
   if (!fs.existsSync(CATALOGO_PATH)) {
     fs.writeFileSync(CATALOGO_PATH, JSON.stringify(gerarCatalogoPadrao(), null, 2), 'utf8');
+  }
+  if (!fs.existsSync(CONCURSOS_CFG_PATH)) {
+    fs.writeFileSync(CONCURSOS_CFG_PATH, JSON.stringify(gerarConfigConcursosPadrao(), null, 2), 'utf8');
   }
   if (!fs.existsSync(VENDAS_PATH)) {
     fs.writeFileSync(VENDAS_PATH, JSON.stringify([], null, 2), 'utf8');
@@ -417,28 +456,101 @@ function efetivarPedidoPago(orderNsu, detalhePagamento = null) {
   return { ok: true, jaConfirmado: false, pedido, venda: preparado.venda };
 }
 
+// Configuração de concursos ativados pelo ADM
+app.get('/api/concursos/config', (req, res) => {
+  try {
+    const todos = obterCatalogoConcursos();
+    const ativosAdm = todos.filter(c => c.ativo !== false);
+    res.json({
+      totalCatalogo: todos.length,
+      totalAtivosAdm: ativosAdm.length,
+      concursos: todos
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao ler configuração dos concursos.' });
+  }
+});
+
+app.post('/api/concursos/toggle', (req, res) => {
+  const chaveEnviada = String(
+    req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin) || ''
+  ).trim();
+  if (chaveEnviada !== ADMIN_CHAVE) {
+    return res.status(401).json({ erro: 'Acesso não autorizado.' });
+  }
+
+  try {
+    const body = req.body || {};
+    const cfgAtual = fs.existsSync(CONCURSOS_CFG_PATH)
+      ? lerJSON(CONCURSOS_CFG_PATH)
+      : gerarConfigConcursosPadrao();
+    cfgAtual.concursos = cfgAtual.concursos && typeof cfgAtual.concursos === 'object' ? cfgAtual.concursos : {};
+
+    // Permite atualizar um concurso específico ou o conjunto inteiro
+    if (Array.isArray(body.ativosIds)) {
+      const setAtivos = new Set(body.ativosIds.map(x => String(x).trim().toUpperCase()));
+      for (const baseItem of obterCatalogoBaseConcursos()) {
+        cfgAtual.concursos[baseItem.id] = { ativo: setAtivos.has(baseItem.id) };
+      }
+    } else {
+      const concurso = encontrarConcurso(body);
+      if (!concurso) {
+        return res.status(404).json({ erro: 'Concurso não encontrado.' });
+      }
+      const atualItem = cfgAtual.concursos[concurso.id] || { ativo: concurso.ativo !== false };
+      const novoEstado =
+        typeof body.ativo === 'boolean' ? body.ativo : !atualItem.ativo;
+      cfgAtual.concursos[concurso.id] = { ativo: novoEstado };
+    }
+
+    cfgAtual.atualizadoEm = new Date().toISOString();
+    salvarJSON(CONCURSOS_CFG_PATH, cfgAtual);
+
+    const todos = obterCatalogoConcursos();
+    const ativosAdm = todos.filter(c => c.ativo !== false);
+
+    res.json({
+      ok: true,
+      totalCatalogo: todos.length,
+      totalAtivosAdm: ativosAdm.length,
+      concursos: todos
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao salvar configuração dos concursos.' });
+  }
+});
+
 app.get('/api/concursos/ativos', (req, res) => {
   const agora = new Date();
   const dataCiclo = obterDataCicloHoje(agora);
   const todos = obterCatalogoConcursos();
-  const ativosHoje = todos.filter(c => concursoEstaAtivoHoje(c.horario, agora));
+  const habilitadosPeloAdm = todos.filter(c => c.ativo !== false);
+  const ativosHoje = habilitadosPeloAdm.filter(c => concursoEstaAtivoHoje(c.horario, agora));
 
   res.json({
     dataCiclo,
     totalCatalogo: todos.length,
+    totalHabilitadosAdm: habilitadosPeloAdm.length,
     totalAtivos: ativosHoje.length,
-    encerradosAteVirada: ativosHoje.length === 0,
+    semConcursosAtivosAdm: habilitadosPeloAdm.length === 0,
+    encerradosAteVirada: habilitadosPeloAdm.length > 0 && ativosHoje.length === 0,
     concursos: ativosHoje
   });
 });
 
-app.post('/api/reservar', (req, res) => {
+function lidarComReservaBilhete(req, res) {
   try {
     const body = req.body || {};
     const concurso = encontrarConcurso(body);
 
     if (!concurso) {
       return res.status(404).json({ erro: 'Concurso não encontrado.' });
+    }
+
+    if (concurso.ativo === false) {
+      return res.status(400).json({
+        erro: `O concurso #${concurso.numero} (${concurso.horario}) não está ativado no momento.`
+      });
     }
 
     const agora = new Date();
@@ -497,14 +609,17 @@ app.post('/api/reservar', (req, res) => {
   } catch (err) {
     return res.status(500).json({ erro: 'Falha ao registrar reserva do bilhete.' });
   }
-});
+}
+
+app.post('/api/reservar', lidarComReservaBilhete);
+app.post('/api/reservas', lidarComReservaBilhete);
 
 app.get('/api/catalogo', (req, res) => {
   try {
     const catalogo = lerJSON(CATALOGO_PATH);
     res.json({
       ...catalogo,
-      concursos: obterCatalogoConcursos()
+      concursos: obterConcursosAtivadosPeloAdm()
     });
   } catch (err) {
     res.status(500).json({ erro: 'Falha ao ler catalogo.json' });
