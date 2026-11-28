@@ -20,28 +20,27 @@
 html,
 body {
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   overflow-x: hidden;
   scroll-behavior: smooth;
+  background-color: var(--bg-void);
 }
 
 body {
-  background: radial-gradient(circle at top, #0c1738 0%, #03050a 65%);
+  background: var(--bg-void);
   color: var(--text-main);
   font-family: "Rajdhani", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  padding: 10px;
 }
 
 .cyber-shell {
   width: 100%;
-  max-width: 480px;
+  max-width: 100%;
+  min-height: 100vh;
   background: var(--bg-void);
-  border: 1px solid rgba(184, 255, 0, 0.28);
-  box-shadow: 0 0 40px rgba(29, 78, 216, 0.28);
-  overflow: hidden;
+  border: none;
+  box-shadow: none;
+  overflow-x: hidden;
   position: relative;
 }
 
@@ -49,8 +48,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   padding: 12px 14px;
-  background: rgba(5, 7, 13, 0.94);
+  background: var(--bg-void);
   border-bottom: 1px solid var(--border-tech);
 }
 
@@ -58,6 +58,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .cyber-badge-99 {
@@ -68,28 +69,54 @@ body {
   font-size: 0.85rem;
   padding: 3px 8px;
   clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+  flex-shrink: 0;
 }
 
 .cyber-brand-text {
   font-family: "Orbitron", sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.cyber-live-pill {
+.topbar-acoes {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+}
+
+.link-membros-pill {
+  color: var(--lime);
+  text-decoration: none;
   font-family: "Orbitron", sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  border: 1px solid rgba(184, 255, 0, 0.45);
+  background: rgba(184, 255, 0, 0.08);
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.cyber-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.62rem;
   font-weight: 700;
   color: var(--lime);
   border: 1px solid rgba(184, 255, 0, 0.45);
   background: rgba(184, 255, 0, 0.08);
   padding: 4px 9px;
   border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pulse-dot {
@@ -98,10 +125,12 @@ body {
   border-radius: 50%;
   background: var(--lime);
   box-shadow: 0 0 8px var(--lime);
+  flex-shrink: 0;
 }
 
 .cyber-hero {
   border-bottom: 1px solid var(--border-tech);
+  background: var(--bg-void);
 }
 
 .hero-media-frame {
@@ -109,7 +138,7 @@ body {
   width: 100%;
   height: 360px;
   max-height: 360px;
-  background: linear-gradient(135deg, #07112b 0%, #0b1e4d 45%, #05070d 100%);
+  background: #070d1f;
   overflow: hidden;
 }
 
@@ -158,7 +187,7 @@ body {
   background: rgba(5, 7, 13, 0.82);
   border: 1px solid var(--border-tech);
   color: var(--cyan-neon);
-  backdrop-filter: blur(4px);
+  white-space: nowrap;
 }
 
 .hud-chip.lime {
@@ -203,6 +232,13 @@ body {
   margin-bottom: 12px;
 }
 
+.hero-cta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .btn-cyber-primary {
   display: inline-flex;
   align-items: center;
@@ -228,6 +264,7 @@ body {
 .cyber-section {
   padding: 16px 14px;
   border-bottom: 1px solid var(--border-tech);
+  background: var(--bg-void);
 }
 
 .section-head {
@@ -259,6 +296,7 @@ body {
   background: var(--bg-panel);
   border: 1px solid var(--border-tech);
   padding: 6px 10px;
+  flex-shrink: 0;
 }
 
 .clock-now-box span {
@@ -272,6 +310,7 @@ body {
   font-family: "Orbitron", sans-serif;
   font-size: 0.84rem;
   color: var(--cyan-neon);
+  white-space: nowrap;
 }
 
 .carousel-controls-bar {
@@ -290,6 +329,7 @@ body {
 .carousel-nav-btns {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .btn-nav-slide {
@@ -447,6 +487,8 @@ body {
   color: var(--cyan-neon);
   border: 1px solid var(--border-tech);
   padding: 4px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .rules-panel {
@@ -456,6 +498,38 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.consulta-desc {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.consulta-form {
+  display: flex;
+  gap: 8px;
+}
+
+.consulta-form input {
+  flex: 1;
+  padding: 10px 12px;
+  background: #050811;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #fff;
+  font-family: "Rajdhani", sans-serif;
+  font-size: 0.95rem;
+}
+
+.consulta-resultado {
+  color: #38bdf8;
+}
+
+.link-membros-inline {
+  color: #b8ff00;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
 }
 
 .rule-item {
@@ -489,6 +563,7 @@ body {
   gap: 8px;
   padding: 14px;
   border-bottom: 1px solid var(--border-tech);
+  background: var(--bg-void);
 }
 
 .metric-card {
@@ -526,6 +601,7 @@ body {
   align-items: center;
   gap: 12px;
   padding: 16px 14px;
+  background: var(--bg-void);
 }
 
 .footer-info h3 {
@@ -547,6 +623,12 @@ body {
   gap: 3px;
   font-size: 0.76rem;
   color: var(--cyan-neon);
+}
+
+.footer-membros-link {
+  color: #b8ff00;
+  text-decoration: none;
+  font-weight: 700;
 }
 
 .footer-qr-box {
@@ -754,8 +836,15 @@ body {
   font-family: "Orbitron", sans-serif;
   font-size: 0.66rem;
   font-weight: 700;
-  padding: 11px 10px;
+  padding: 10px 12px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-cyber-mini.full-mini {
+  width: 100%;
+  text-align: center;
 }
 
 .modal-dz-grid {
@@ -818,4 +907,73 @@ body {
 
 .modal-feedback.erro {
   color: #f87171;
+}
+
+/* TELINHA DE CHECKOUT PROVISÓRIO */
+.checkout-resumo {
+  background: #050811;
+  border: 1px solid var(--border-tech);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 0.86rem;
+}
+
+.checkout-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkout-linha span {
+  color: var(--text-muted);
+}
+
+.checkout-linha strong {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.78rem;
+  color: #ffffff;
+}
+
+.checkout-linha strong.destaque-lime {
+  color: var(--lime);
+}
+
+.checkout-linha strong.status-pendente {
+  color: var(--cyan-neon);
+}
+
+.checkout-qr-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  background: var(--bg-panel);
+  border: 1px solid rgba(184, 255, 0, 0.35);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.checkout-qr-area img {
+  width: 150px;
+  height: 150px;
+  background: #ffffff;
+  padding: 6px;
+  border: 2px solid var(--lime);
+}
+
+.checkout-instrucao {
+  font-size: 0.83rem;
+  line-height: 1.38;
+  color: #e2e8f0;
+}
+
+.checkout-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
