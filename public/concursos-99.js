@@ -669,4 +669,3 @@ carregarConfigAgentes();
 
 setInterval(atualizarCronometros, 1000);
 setInterval(carregarUltimosResultados, 20000);
-a
