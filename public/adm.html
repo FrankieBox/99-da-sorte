@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google" content="notranslate" />
-  <title>99 da sorte — Painel ADM &amp; Resultados</title>
+  <title>99 da sorte — Central ADM &amp; Financeiro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -20,6 +20,8 @@
       --cyan-neon: #38bdf8;
       --lime: #b8ff00;
       --lime-dark: #071100;
+      --amber: #fbbf24;
+      --danger: #f87171;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --border-tech: rgba(56, 189, 248, 0.28);
@@ -43,7 +45,7 @@
 
     .adm-shell {
       width: 100%;
-      max-width: 560px;
+      max-width: 680px;
       background: var(--bg-void);
       border: 1px solid rgba(184, 255, 0, 0.28);
       box-shadow: 0 0 40px rgba(29, 78, 216, 0.28);
@@ -114,6 +116,7 @@
       align-items: center;
       gap: 10px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
     .sec-head h2 {
@@ -128,6 +131,65 @@
       gap: 10px;
     }
 
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (min-width: 560px) {
+      .grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .kpi-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-tech);
+      padding: 10px;
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .kpi-val {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.94rem;
+      font-weight: 800;
+      margin-top: 3px;
+      color: var(--lime);
+    }
+
+    .kpi-val.amber {
+      color: var(--amber);
+    }
+
+    .kpi-val.cyan {
+      color: var(--cyan-neon);
+    }
+
+    .filtros-barra {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-tech);
+      padding: 10px;
+    }
+
+    @media (min-width: 560px) {
+      .filtros-barra {
+        grid-template-columns: 1fr 1fr 1.2fr auto;
+        align-items: end;
+      }
+    }
+
     .campo {
       display: flex;
       flex-direction: column;
@@ -135,8 +197,12 @@
       margin-bottom: 10px;
     }
 
+    .filtros-barra .campo {
+      margin-bottom: 0;
+    }
+
     .campo label {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: var(--cyan-neon);
       text-transform: uppercase;
@@ -146,12 +212,12 @@
     .campo input,
     .campo select {
       width: 100%;
-      padding: 10px 11px;
+      padding: 9px 10px;
       background: #050811;
       border: 1px solid var(--border-tech);
       color: #ffffff;
       font-family: "Rajdhani", sans-serif;
-      font-size: 0.98rem;
+      font-size: 0.96rem;
       font-weight: 600;
     }
 
@@ -175,11 +241,6 @@
       clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
     }
 
-    .btn-lime:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-
     .btn-outline {
       background: rgba(56, 189, 248, 0.1);
       border: 1px solid var(--cyan-neon);
@@ -200,7 +261,96 @@
     }
 
     .feedback.erro {
-      color: #f87171;
+      color: var(--danger);
+    }
+
+    .lista-negociacoes {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      max-height: 460px;
+      overflow-y: auto;
+    }
+
+    .negociacao-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-tech);
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .neg-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .neg-id {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--cyan-neon);
+    }
+
+    .neg-valores {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--lime);
+    }
+
+    .neg-dados {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3px;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+    }
+
+    @media (min-width: 520px) {
+      .neg-dados {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .neg-rodape {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 6px;
+      border-top: 1px solid rgba(56, 189, 248, 0.14);
+    }
+
+    .chave-pix-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pix-select {
+      padding: 5px 8px;
+      background: #050811;
+      border: 1px solid var(--border-tech);
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .pix-select.status-pago {
+      color: var(--lime);
+      border-color: var(--lime);
+    }
+
+    .pix-select.status-pendente {
+      color: var(--amber);
+      border-color: var(--amber);
     }
 
     .horarios-grid {
@@ -214,13 +364,8 @@
       border: 1px solid var(--border-tech);
       padding: 9px 8px;
       cursor: pointer;
-      transition: border-color 0.15s;
       text-align: left;
       color: var(--text-main);
-    }
-
-    .horario-tile:hover {
-      border-color: var(--lime);
     }
 
     .horario-tile.publicado,
@@ -243,11 +388,10 @@
       font-size: 0.74rem;
       font-weight: 800;
       margin-bottom: 4px;
-      gap: 4px;
     }
 
     .tile-status {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--text-muted);
     }
@@ -255,8 +399,6 @@
     .horario-tile.publicado .tile-status,
     .horario-tile.ativo-adm .tile-status {
       color: var(--lime);
-      font-family: "Orbitron", sans-serif;
-      font-size: 0.74rem;
     }
 
     .ganhadores-lista {
@@ -273,17 +415,6 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-    }
-
-    .ganhador-card strong {
-      color: var(--lime);
-      font-family: "Orbitron", sans-serif;
-      font-size: 0.82rem;
-    }
-
-    .ganhador-meta {
-      font-size: 0.84rem;
-      color: #e2e8f0;
     }
 
     .vazio-txt {
@@ -308,7 +439,7 @@
       flex-wrap: wrap;
       gap: 8px;
       background: #04060b;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
     }
 
     .links-rodape a {
@@ -323,12 +454,69 @@
     <header class="adm-topbar">
       <div class="adm-brand">
         <span class="badge-99">99</span>
-        <span class="adm-title">CENTRAL ADM // RESULTADOS</span>
+        <span class="adm-title">CENTRAL ADM // FINANCEIRO</span>
       </div>
       <span class="status-pill" id="adm-status-pill">CONECTADO</span>
     </header>
 
-    <!-- 1. CHAVE + PUBLICAÇÃO RÁPIDA DE RESULTADO -->
+    <!-- 1. GERENCIADOR FINANCEIRO & HISTÓRICO DE NEGOCIAÇÕES -->
+    <section class="adm-section">
+      <span class="sec-tag">// GERENCIADOR FINANCEIRO &amp; CONTROLE DE PIX PÓS-RESERVA</span>
+      <div class="sec-head">
+        <h2>HISTÓRICO DE NEGOCIAÇÕES</h2>
+        <button type="button" class="btn-outline" id="btn-limpar-filtros">LIMPAR FILTROS</button>
+      </div>
+
+      <div class="grid-4">
+        <div class="kpi-box">
+          <div class="kpi-label">Pix Pago</div>
+          <div class="kpi-val" id="kpi-pago">R$ 0,00</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-label">Pix Pendente</div>
+          <div class="kpi-val amber" id="kpi-pendente">R$ 0,00</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-label">Volume Filtrado</div>
+          <div class="kpi-val cyan" id="kpi-volume">R$ 0,00</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-label">Bilhetes</div>
+          <div class="kpi-val" id="kpi-qtd">0</div>
+        </div>
+      </div>
+
+      <div class="filtros-barra">
+        <div class="campo">
+          <label for="filtro-concurso">Concurso</label>
+          <select id="filtro-concurso">
+            <option value="TODOS">Todos os concursos</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="filtro-data">Data</label>
+          <input type="date" id="filtro-data" />
+        </div>
+
+        <div class="campo">
+          <label for="filtro-whatsapp">WhatsApp / Nome / ID</label>
+          <input
+            type="text"
+            id="filtro-whatsapp"
+            placeholder="Ex: 11960379764 ou 99S-C-12"
+          />
+        </div>
+
+        <button type="button" class="btn-outline" id="btn-aplicar-filtros">FILTRAR</button>
+      </div>
+
+      <div id="lista-negociacoes" class="lista-negociacoes">
+        <p class="vazio-txt">Carregando negociações...</p>
+      </div>
+    </section>
+
+    <!-- 2. PUBLICAÇÃO DE RESULTADO -->
     <section class="adm-section">
       <span class="sec-tag">// LANÇAMENTO OFICIAL (CORCEL BRANCO → 99 DA SORTE)</span>
       <div class="sec-head">
@@ -379,7 +567,7 @@
       <p id="adm-feedback" class="feedback"></p>
     </section>
 
-    <!-- 2. CONCURSOS ATIVOS NA LANDING PAGE -->
+    <!-- 3. CONCURSOS ATIVOS NA LANDING PAGE -->
     <section class="adm-section">
       <span class="sec-tag">// VISIBILIDADE NA LANDING PAGE (TOQUE PARA LIGAR / DESLIGAR)</span>
       <div class="sec-head">
@@ -389,7 +577,7 @@
       <div id="grid-concursos-adm" class="horarios-grid"></div>
     </section>
 
-    <!-- 3. POSSÍVEIS GANHADORES DO ÚLTIMO LANÇAMENTO -->
+    <!-- 4. POSSÍVEIS GANHADORES -->
     <section class="adm-section">
       <span class="sec-tag">// CONFERÊNCIA AUTOMÁTICA</span>
       <div class="sec-head">
@@ -400,7 +588,7 @@
       </div>
     </section>
 
-    <!-- 4. PAINEL DOS 15 RESULTADOS DO DIA -->
+    <!-- 5. GRADE DOS 15 RESULTADOS DO DIA -->
     <section class="adm-section">
       <span class="sec-tag">// GRADE DIÁRIA (TOQUE PARA SELECIONAR O HORÁRIO)</span>
       <div class="sec-head">
@@ -410,7 +598,7 @@
       <div id="grid-resultados-dia" class="horarios-grid"></div>
     </section>
 
-    <!-- 5. CONTROLE DO TIME DE AGENTES DE AQUECIMENTO -->
+    <!-- 6. AGENTES DE AQUECIMENTO -->
     <section class="adm-section">
       <span class="sec-tag">// PROVA SOCIAL NO MODAL</span>
       <div class="sec-head">
@@ -426,9 +614,9 @@
     </section>
 
     <footer class="links-rodape">
-      <a href="/concursos-99.html" target="_blank">↗ Abrir Landing Concursos</a>
-      <a href="/produto.html" target="_blank">↗ Abrir Landing Produto</a>
-      <a href="/" target="_blank">↗ Abrir Terminal</a>
+      <a href="/concursos-99.html" target="_blank">↗ Landing Concursos</a>
+      <a href="/membros.html" target="_blank">↗ Área de Membros</a>
+      <a href="/" target="_blank">↗ Terminal</a>
     </footer>
   </div>
 
@@ -446,6 +634,18 @@
     const formEl = document.getElementById('form-publicar-resultado');
     const btnSalvarEl = document.getElementById('btn-salvar-resultado');
     const feedbackEl = document.getElementById('adm-feedback');
+
+    const filtroConcursoEl = document.getElementById('filtro-concurso');
+    const filtroDataEl = document.getElementById('filtro-data');
+    const filtroWhatsappEl = document.getElementById('filtro-whatsapp');
+    const btnAplicarFiltrosEl = document.getElementById('btn-aplicar-filtros');
+    const btnLimparFiltrosEl = document.getElementById('btn-limpar-filtros');
+    const listaNegociacoesEl = document.getElementById('lista-negociacoes');
+    const kpiPagoEl = document.getElementById('kpi-pago');
+    const kpiPendenteEl = document.getElementById('kpi-pendente');
+    const kpiVolumeEl = document.getElementById('kpi-volume');
+    const kpiQtdEl = document.getElementById('kpi-qtd');
+
     const gridConcursosAdmEl = document.getElementById('grid-concursos-adm');
     const contadorConcursosAdmEl = document.getElementById('contador-concursos-adm');
     const listaGanhadoresEl = document.getElementById('lista-ganhadores');
@@ -457,6 +657,24 @@
     const btnToggleAgentesEl = document.getElementById('btn-toggle-agentes');
 
     let agentesAtivos = true;
+
+    function formatarMoeda(valor) {
+      return `R$ ${Number(valor || 0).toFixed(2).replace('.', ',')}`;
+    }
+
+    function formatarDataHoraLocal(isoStr) {
+      if (!isoStr) return '--';
+      const dt = new Date(isoStr);
+      if (Number.isNaN(dt.getTime())) return isoStr;
+      return dt.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
 
     function normalizarHorario(valor) {
       const match = String(valor || '').match(/(\d{2}:\d{2})/);
@@ -473,7 +691,9 @@
       const y = agora.getFullYear();
       const m = String(agora.getMonth() + 1).padStart(2, '0');
       const d = String(agora.getDate()).padStart(2, '0');
-      dataEl.value = `${y}-${m}-${d}`;
+      const hojeStr = `${y}-${m}-${d}`;
+      dataEl.value = hojeStr;
+      if (filtroDataEl) filtroDataEl.value = hojeStr;
 
       const chaveSalva = localStorage.getItem('99_adm_key');
       if (chaveSalva) {
@@ -485,11 +705,152 @@
       horarioEl.innerHTML = HORARIOS_CONCURSOS.map(
         (h, i) => `<option value="${h}">#${String(i + 1).padStart(2, '0')} • ${h}</option>`
       ).join('');
+
+      if (filtroConcursoEl) {
+        filtroConcursoEl.innerHTML =
+          '<option value="TODOS">Todos os concursos</option>' +
+          HORARIOS_CONCURSOS.map(
+            (h, i) => `<option value="C-${String(i + 1).padStart(2, '0')}">#${String(i + 1).padStart(2, '0')} • ${h}</option>`
+          ).join('');
+      }
     }
 
     function mostrarFeedback(msg, erro = false) {
       feedbackEl.textContent = msg;
       feedbackEl.className = erro ? 'feedback erro' : 'feedback';
+    }
+
+    function renderizarHistoricoNegociacoes(payload) {
+      if (!listaNegociacoesEl) return;
+
+      if (kpiPagoEl) kpiPagoEl.textContent = formatarMoeda(payload.totalPago);
+      if (kpiPendenteEl) kpiPendenteEl.textContent = formatarMoeda(payload.totalPendente);
+      if (kpiVolumeEl) kpiVolumeEl.textContent = formatarMoeda(payload.totalArrecadado);
+      if (kpiQtdEl) kpiQtdEl.textContent = String(payload.totalRegistros || 0);
+
+      const vendas = Array.isArray(payload.vendas) ? payload.vendas : [];
+      if (vendas.length === 0) {
+        listaNegociacoesEl.innerHTML =
+          '<p class="vazio-txt">Nenhuma negociação encontrada para os filtros selecionados.</p>';
+        return;
+      }
+
+      listaNegociacoesEl.innerHTML = vendas
+        .map(v => {
+          const nome = (v.lead && v.lead.nome) || 'Cliente 99';
+          const whatsapp = (v.lead && v.lead.contato) || 'Sem WhatsApp';
+          const concursoLabel = v.concursoNumero
+            ? `Concurso #${v.concursoNumero} (${v.horarioConcurso || '--:--'})`
+            : (v.produto || 'Avulso');
+          const dz = Array.isArray(v.selecao) ? v.selecao.join('-') : (v.selecao || '--');
+          const statusPix = String(v.statusPagamento || 'pendente').toLowerCase() === 'pago' ? 'pago' : 'pendente';
+
+          return `
+            <article class="negociacao-card" data-id="${v.id}">
+              <div class="neg-topo">
+                <span class="neg-id">${v.id}</span>
+                <span class="neg-valores">${formatarMoeda(v.valor)} • Ret. ${formatarMoeda(v.retornoPotencial || 50)}</span>
+              </div>
+              <div class="neg-dados">
+                <div><strong>Nome:</strong> ${nome}</div>
+                <div><strong>WhatsApp:</strong> ${whatsapp}</div>
+                <div><strong>Concurso:</strong> ${concursoLabel}</div>
+                <div><strong>Dezena:</strong> ${dz} (${v.modalidade || 'DZ'})</div>
+                <div><strong>Data / Hora:</strong> ${formatarDataHoraLocal(v.dataHora)}</div>
+                <div><strong>Ciclo:</strong> ${v.dataCiclo || '--'}</div>
+              </div>
+              <div class="neg-rodape">
+                <div class="chave-pix-group">
+                  <label for="pix-${v.id}" class="vazio-txt">Status Pix:</label>
+                  <select
+                    id="pix-${v.id}"
+                    class="pix-select ${statusPix === 'pago' ? 'status-pago' : 'status-pendente'}"
+                    data-pix-select="${v.id}"
+                  >
+                    <option value="pendente" ${statusPix === 'pendente' ? 'selected' : ''}>PENDENTE</option>
+                    <option value="pago" ${statusPix === 'pago' ? 'selected' : ''}>PAGO</option>
+                  </select>
+                </div>
+                <button type="button" class="btn-outline" data-excluir-venda="${v.id}">APAGAR</button>
+              </div>
+            </article>
+          `;
+        })
+        .join('');
+
+      listaNegociacoesEl.querySelectorAll('[data-pix-select]').forEach(sel => {
+        sel.addEventListener('change', async () => {
+          const idBilhete = sel.dataset.pixSelect;
+          const novoStatus = sel.value;
+          const chave = obterChaveAdmin();
+          localStorage.setItem('99_adm_key', chave);
+
+          try {
+            const res = await fetch(`/api/vendas/${encodeURIComponent(idBilhete)}/status`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-admin-key': chave
+              },
+              body: JSON.stringify({
+                statusPagamento: novoStatus,
+                chaveAdmin: chave
+              })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              mostrarFeedback(data.erro || 'Não foi possível atualizar status do Pix.', true);
+              await carregarHistoricoNegociacoes();
+              return;
+            }
+            mostrarFeedback(`Bilhete ${idBilhete} marcado como ${novoStatus.toUpperCase()}.`);
+            await carregarHistoricoNegociacoes();
+          } catch (_) {
+            mostrarFeedback('Erro de comunicação ao alterar status do Pix.', true);
+          }
+        });
+      });
+
+      listaNegociacoesEl.querySelectorAll('[data-excluir-venda]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const idBilhete = btn.dataset.excluirVenda;
+          try {
+            const res = await fetch(`/api/vendas/${encodeURIComponent(idBilhete)}`, {
+              method: 'DELETE'
+            });
+            if (res.ok) {
+              mostrarFeedback(`Registro ${idBilhete} removido.`);
+              await carregarHistoricoNegociacoes();
+            }
+          } catch (_) {}
+        });
+      });
+    }
+
+    async function carregarHistoricoNegociacoes() {
+      if (!listaNegociacoesEl) return;
+      try {
+        const params = new URLSearchParams();
+        if (filtroConcursoEl && filtroConcursoEl.value && filtroConcursoEl.value !== 'TODOS') {
+          params.set('concurso', filtroConcursoEl.value);
+        }
+        if (filtroDataEl && filtroDataEl.value) {
+          params.set('data', filtroDataEl.value);
+        }
+        if (filtroWhatsappEl && filtroWhatsappEl.value.trim()) {
+          params.set('whatsapp', filtroWhatsappEl.value.trim());
+        }
+
+        const qs = params.toString();
+        const url = qs ? `/api/vendas?${qs}` : '/api/vendas';
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('Falha ao buscar vendas');
+        const payload = await res.json();
+        renderizarHistoricoNegociacoes(payload);
+      } catch (_) {
+        listaNegociacoesEl.innerHTML =
+          '<p class="vazio-txt">Não foi possível carregar o histórico de negociações.</p>';
+      }
     }
 
     function renderizarConcursosAdm(lista) {
@@ -563,7 +924,7 @@
             mostrarFeedback(
               `Concurso ${concursoId} ${!estadoAtual ? 'ativado' : 'desativado'} na landing page.`
             );
-          } catch (err) {
+          } catch (_) {
             mostrarFeedback('Falha de comunicação ao atualizar concurso.', true);
           }
         });
@@ -620,8 +981,8 @@
             dezenaEl.focus();
           });
         });
-      } catch (err) {
-        mostrarFeedback('Não foi possível atualizar a grade do dia. Verifique se o servidor está online.', true);
+      } catch (_) {
+        mostrarFeedback('Não foi possível atualizar a grade do dia.', true);
       }
     }
 
@@ -643,9 +1004,9 @@
             <div class="ganhador-card">
               <div>
                 <strong>${v.id} • DZ ${resultado.dezena}</strong>
-                <div class="ganhador-meta">${nome} • ${contato}</div>
+                <div class="vazio-txt">${nome} • ${contato}</div>
               </div>
-              <span>R$ ${Number(v.valor || 0).toFixed(2)}</span>
+              <span>${formatarMoeda(v.valor)}</span>
             </div>
           `;
         })
@@ -662,9 +1023,7 @@
         statusAgentesEl.textContent = agentesAtivos ? '● ATIVO NO MODAL' : '○ PAUSADO';
         statusAgentesEl.style.color = agentesAtivos ? '#b8ff00' : '#94a3b8';
         detalheAgentesEl.textContent = `${qtd} perfis • intervalo ${cfg.intervaloMinSegundos || 8}s–${cfg.intervaloMaxSegundos || 16}s`;
-      } catch (err) {
-        // Ignora falha pontual na leitura dos agentes
-      }
+      } catch (_) {}
     }
 
     btnToggleAgentesEl.addEventListener('click', async () => {
@@ -691,7 +1050,7 @@
           data.ativoGlobal ? 'Agentes de aquecimento ativados!' : 'Agentes de aquecimento pausados!'
         );
         await carregarAgentesStatus();
-      } catch (err) {
+      } catch (_) {
         mostrarFeedback('Falha de comunicação ao alternar agentes.', true);
       }
     });
@@ -738,6 +1097,7 @@
         dezenaEl.value = '';
         renderizarGanhadores(data.possiveisGanhadores, data.resultado);
         await carregarPainelDia();
+        await carregarHistoricoNegociacoes();
       } catch (err) {
         mostrarFeedback(err.message || 'Falha de rede ao publicar resultado.', true);
       } finally {
@@ -745,14 +1105,42 @@
       }
     });
 
+    if (btnAplicarFiltrosEl) {
+      btnAplicarFiltrosEl.addEventListener('click', carregarHistoricoNegociacoes);
+    }
+    if (filtroConcursoEl) {
+      filtroConcursoEl.addEventListener('change', carregarHistoricoNegociacoes);
+    }
+    if (filtroDataEl) {
+      filtroDataEl.addEventListener('change', carregarHistoricoNegociacoes);
+    }
+    if (filtroWhatsappEl) {
+      filtroWhatsappEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          carregarHistoricoNegociacoes();
+        }
+      });
+    }
+    if (btnLimparFiltrosEl) {
+      btnLimparFiltrosEl.addEventListener('click', () => {
+        if (filtroConcursoEl) filtroConcursoEl.value = 'TODOS';
+        if (filtroDataEl) filtroDataEl.value = '';
+        if (filtroWhatsappEl) filtroWhatsappEl.value = '';
+        carregarHistoricoNegociacoes();
+      });
+    }
+
     dataEl.addEventListener('change', carregarPainelDia);
     btnRecarregarEl.addEventListener('click', () => {
+      carregarHistoricoNegociacoes();
       carregarConcursosAdm();
       carregarPainelDia();
       carregarAgentesStatus();
     });
 
     inicializarFormulario();
+    carregarHistoricoNegociacoes();
     renderizarConcursosAdm();
     carregarConcursosAdm();
     carregarPainelDia();
