@@ -28,7 +28,8 @@ const CONCURSOS_CATALOGO = HORARIOS_CONCURSOS.map((horario, idx) => ({
   tipo: idx >= 12 ? 'SESSÃO ESPECIAL' : 'GRADE HORÁRIA',
   valorBilhete: 2.5,
   premio: 50.0,
-  modalidade: 'DZ'
+  modalidade: 'DZ',
+  ativo: true
 }));
 
 // Código Pix provisório limpo (R$ 2,50) — sem concatenar ou duplicar trechos
@@ -78,7 +79,9 @@ const inputPixCopiaColaEl = document.getElementById('input-pix-copia-cola');
 const btnCopiarPixEl = document.getElementById('btn-copiar-pix');
 const btnConcluirReservaEl = document.getElementById('btn-concluir-reserva');
 
+let concursosHabilitadosAdm = [...CONCURSOS_CATALOGO];
 let concursosAtivosHoje = [];
+let semConcursosNoAdm = false;
 let concursoAtivo = null;
 let dezenaSelecionada = '';
 
@@ -176,7 +179,6 @@ async function sortearDezenaSurpresinhaSha256(chaveContexto) {
   let disponiveis = DEZENAS_100.filter(dz => !setSorteadas.has(dz));
   let cicloReiniciado = false;
 
-  // Só volta a repetir após todas as 100 dezenas saírem
   if (disponiveis.length === 0) {
     disponiveis = [...DEZENAS_100];
     sorteadas.length = 0;
@@ -221,7 +223,7 @@ function montarCardConcursoHtml(c, idx, total) {
         <span class="card-badge">${badgeDestaque}</span>
       </div>
       <div class="card-hora">${c.horario}</div>
-      <div class="card-premio">Prêmio: <strong>R$ 50,00</strong> • Bilhete R$ 2,50</div>
+      <div class="card-premio">Prêmio: <strong>R$ ${Number(c.premio || 50).toFixed(2).replace('.', ',')}</strong> • Bilhete R$ ${Number(c.valorBilhete || 2.5).toFixed(2).replace('.', ',')}</div>
       <div class="card-timer-linha">
         <span>FECHA EM</span>
         <strong data-timer-concurso="${c.id}">--:--:--</strong>
@@ -237,14 +239,17 @@ function renderizarCarrosselAtivos() {
   if (!listaConcursosEl) return;
 
   if (concursosAtivosHoje.length === 0) {
+    const mensagemVazia = semConcursosNoAdm
+      ? 'Nenhum concurso está ativado no painel ADM no momento. Ative um horário no ADM para liberar na página.'
+      : 'Os sorteios ativados para hoje já encerraram. Novos concursos abrem na virada do dia.';
     listaConcursosEl.innerHTML = `
       <div class="card-concurso encerrado-dia">
         <div class="card-topo">
-          <span>CICLO ENCERRADO</span>
-          <span>00:00</span>
+          <span>${semConcursosNoAdm ? 'AGUARDANDO ADM' : 'CICLO ENCERRADO'}</span>
+          <span>--:--</span>
         </div>
-        <div class="card-hora">AMANHÃ</div>
-        <p class="card-sub">Os sorteios de hoje já encerraram. Novos concursos abrem na virada do dia.</p>
+        <div class="card-hora">${semConcursosNoAdm ? 'PAUSADO' : 'AMANHÃ'}</div>
+        <p class="card-sub">${mensagemVazia}</p>
       </div>
     `;
     return;
@@ -253,7 +258,6 @@ function renderizarCarrosselAtivos() {
   const scrollAnterior = carrosselViewportEl ? carrosselViewportEl.scrollLeft : 0;
   const total = concursosAtivosHoje.length;
 
-  // Duplica a lista para manter o loop contínuo sem salto brusco
   const htmlOriginal = concursosAtivosHoje.map((c, idx) => montarCardConcursoHtml(c, idx, total)).join('');
   const htmlDuplicado = concursosAtivosHoje.map((c, idx) => montarCardConcursoHtml(c, idx, total)).join('');
   listaConcursosEl.innerHTML = htmlOriginal + htmlDuplicado;
@@ -280,8 +284,8 @@ function renderizarCarrosselAtivos() {
 
 function sincronizarConcursosAtivos(forcarReconstrucao = false) {
   const agora = new Date();
-  const ativos = CONCURSOS_CATALOGO.filter(
-    c => obterAlvoHoje(c.horario, agora).getTime() > agora.getTime()
+  const ativos = concursosHabilitadosAdm.filter(
+    c => c.ativo !== false && obterAlvoHoje(c.horario, agora).getTime() > agora.getTime()
   );
 
   const mudouLista =
@@ -292,14 +296,37 @@ function sincronizarConcursosAtivos(forcarReconstrucao = false) {
   concursosAtivosHoje = ativos;
 
   if (concursoAtivo) {
+    const aindaHabilitado = concursosHabilitadosAdm.some(
+      c => c.id === concursoAtivo.id && c.ativo !== false
+    );
     const alvoAtivo = obterAlvoHoje(concursoAtivo.horario, agora);
-    if (alvoAtivo.getTime() <= agora.getTime()) {
+    if (!aindaHabilitado || alvoAtivo.getTime() <= agora.getTime()) {
       fecharModalConcurso();
     }
   }
 
   if (mudouLista) {
     renderizarCarrosselAtivos();
+  }
+}
+
+async function carregarConcursosAtivosDoServidor() {
+  try {
+    const res = await fetch('/api/concursos/ativos', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (Array.isArray(data.concursos)) {
+      semConcursosNoAdm = Boolean(data.semConcursosAtivosAdm);
+      concursosHabilitadosAdm = data.concursos.map(c => ({
+        ...c,
+        ativo: c.ativo !== false
+      }));
+      sincronizarConcursosAtivos(true);
+      atualizarCronometros();
+    }
+  } catch (_) {
+    // Mantém lista atual em caso de falha momentânea de rede
   }
 }
 
@@ -571,7 +598,7 @@ function abrirModalConcurso(concurso) {
   if (formReservaEl) formReservaEl.reset();
 
   if (modalConcursoTagEl) {
-    modalConcursoTagEl.textContent = `CONCURSO #${concurso.numero} • PRÊMIO R$ 50,00`;
+    modalConcursoTagEl.textContent = `CONCURSO #${concurso.numero} • PRÊMIO R$ ${Number(concurso.premio || 50).toFixed(2).replace('.', ',')}`;
   }
   if (modalHorarioEl) {
     modalHorarioEl.textContent = concurso.horario;
@@ -715,7 +742,7 @@ async function consultarBilhetePorId() {
   const idBusca = inputBuscaIdEl.value.trim();
   if (!idBusca) {
     resultadoConsultaEl.classList.remove('hidden');
-    resultadoConsultaEl.innerHTML = '<span>Digite o ID do bilhete (ex.: 99S-C03-4821).</span>';
+    resultadoConsultaEl.innerHTML = '<span>Digite o ID do bilhete (ex.: 99S-C-03-4821).</span>';
     return;
   }
 
@@ -799,4 +826,6 @@ configurarControlesCarrossel();
 sincronizarConcursosAtivos(true);
 atualizarCronometros();
 iniciarLoopCarrossel();
+carregarConcursosAtivosDoServidor();
 setInterval(atualizarCronometros, 1000);
+setInterval(carregarConcursosAtivosDoServidor, 15000);
