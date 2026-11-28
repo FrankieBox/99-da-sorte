@@ -4,6 +4,8 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const TIMEZONE_APP = process.env.TZ || 'America/Sao_Paulo';
+process.env.TZ = TIMEZONE_APP;
 
 const RAIZ = __dirname;
 const PUBLIC_DIR = path.join(RAIZ, 'public');
@@ -50,6 +52,34 @@ if (fs.existsSync(PUBLIC_DIR)) {
   app.use(express.static(PUBLIC_DIR));
 }
 app.use(express.static(RAIZ));
+
+function obterAgoraTz() {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE_APP,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(new Date());
+
+  const mapa = {};
+  for (const p of partes) {
+    if (p.type !== 'literal') mapa[p.type] = p.value;
+  }
+
+  return new Date(
+    Number(mapa.year),
+    Number(mapa.month) - 1,
+    Number(mapa.day),
+    Number(mapa.hour),
+    Number(mapa.minute),
+    Number(mapa.second),
+    0
+  );
+}
 
 function gerarTodasDezenas() {
   const lista = [];
@@ -98,7 +128,7 @@ function obterCatalogoConcursos() {
     cfg = null;
   }
 
-  const mapa = (cfg && cfg.concursos && typeof cfg.concursos === 'object') ? cfg.concursos : {};
+  const mapa = cfg && cfg.concursos && typeof cfg.concursos === 'object' ? cfg.concursos : {};
   return base.map(c => {
     const itemCfg = mapa[c.id] || mapa[c.horario];
     const ativo = itemCfg && typeof itemCfg.ativo === 'boolean' ? itemCfg.ativo : true;
@@ -110,14 +140,14 @@ function obterConcursosAtivadosPeloAdm() {
   return obterCatalogoConcursos().filter(c => c.ativo !== false);
 }
 
-function obterDataCicloHoje(agora = new Date()) {
+function obterDataCicloHoje(agora = obterAgoraTz()) {
   const y = agora.getFullYear();
   const m = String(agora.getMonth() + 1).padStart(2, '0');
   const d = String(agora.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
-function concursoEstaAtivoHoje(horarioStr, agora = new Date()) {
+function concursoEstaAtivoHoje(horarioStr, agora = obterAgoraTz()) {
   const partes = String(horarioStr || '').split(':').map(Number);
   const hh = partes[0];
   const mm = partes[1];
@@ -342,7 +372,7 @@ function prepararRegistroVenda({
     : Number((valorFormatado * cfg.multiplicador).toFixed(2));
 
   const origemLimpa = origem === 'landing' ? 'landing' : 'presencial';
-  const agora = new Date();
+  const agora = obterAgoraTz();
   const dataCicloLimpa = String(dataCiclo || '').trim() || obterDataCicloHoje(agora);
   const idGerado = concurso && cfg.codigo === 'DZ'
     ? gerarIdBilheteConcurso(concurso)
@@ -456,7 +486,6 @@ function efetivarPedidoPago(orderNsu, detalhePagamento = null) {
   return { ok: true, jaConfirmado: false, pedido, venda: preparado.venda };
 }
 
-// Configuração de concursos ativados pelo ADM
 app.get('/api/concursos/config', (req, res) => {
   try {
     const todos = obterCatalogoConcursos();
@@ -486,7 +515,6 @@ app.post('/api/concursos/toggle', (req, res) => {
       : gerarConfigConcursosPadrao();
     cfgAtual.concursos = cfgAtual.concursos && typeof cfgAtual.concursos === 'object' ? cfgAtual.concursos : {};
 
-    // Permite atualizar um concurso específico ou o conjunto inteiro
     if (Array.isArray(body.ativosIds)) {
       const setAtivos = new Set(body.ativosIds.map(x => String(x).trim().toUpperCase()));
       for (const baseItem of obterCatalogoBaseConcursos()) {
@@ -521,7 +549,7 @@ app.post('/api/concursos/toggle', (req, res) => {
 });
 
 app.get('/api/concursos/ativos', (req, res) => {
-  const agora = new Date();
+  const agora = obterAgoraTz();
   const dataCiclo = obterDataCicloHoje(agora);
   const todos = obterCatalogoConcursos();
   const habilitadosPeloAdm = todos.filter(c => c.ativo !== false);
@@ -529,6 +557,7 @@ app.get('/api/concursos/ativos', (req, res) => {
 
   res.json({
     dataCiclo,
+    timezone: TIMEZONE_APP,
     totalCatalogo: todos.length,
     totalHabilitadosAdm: habilitadosPeloAdm.length,
     totalAtivos: ativosHoje.length,
@@ -553,7 +582,7 @@ function lidarComReservaBilhete(req, res) {
       });
     }
 
-    const agora = new Date();
+    const agora = obterAgoraTz();
     if (!concursoEstaAtivoHoje(concurso.horario, agora)) {
       return res.status(400).json({
         erro: `O concurso #${concurso.numero} (${concurso.horario}) já encerrou hoje. Aguarde a virada do dia para novos concursos.`
@@ -1048,5 +1077,5 @@ app.get('/api/checkout/status/:orderNsu', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`99 da sorte rodando em http://localhost:${PORT}`);
+  console.log(`99 da sorte rodando em http://localhost:${PORT} (${TIMEZONE_APP})`);
 });
