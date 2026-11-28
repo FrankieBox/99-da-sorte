@@ -691,7 +691,7 @@ if (formReservaEl) {
     };
 
     try {
-      const res = await fetch('/api/reservas', {
+      const res = await fetch('/api/reservar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
