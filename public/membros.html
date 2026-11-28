@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR" translate="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google" content="notranslate" />
+  <title>99 da sorte — Área de Membros &amp; Meus Bilhetes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg-void: #05070d;
+      --bg-panel: #0b1020;
+      --bg-card: #0e152b;
+      --cyan-neon: #38bdf8;
+      --lime: #b8ff00;
+      --lime-dark: #071100;
+      --amber: #fbbf24;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-tech: rgba(56, 189, 248, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #0c1738 0%, #03050a 65%);
+      color: var(--text-main);
+      font-family: "Rajdhani", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .membros-shell {
+      width: 100%;
+      max-width: 620px;
+      background: var(--bg-void);
+      border: 1px solid rgba(184, 255, 0, 0.28);
+      box-shadow: 0 0 40px rgba(29, 78, 216, 0.28);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 16px;
+      background: rgba(5, 7, 13, 0.95);
+      border-bottom: 1px solid var(--border-tech);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .badge-99 {
+      background: var(--lime);
+      color: var(--lime-dark);
+      font-family: "Orbitron", sans-serif;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 3px 8px;
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+    }
+
+    .brand-title {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.7px;
+    }
+
+    .topbar a {
+      color: var(--cyan-neon);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .sec {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-tech);
+    }
+
+    .sec-tag {
+      display: block;
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.62rem;
+      color: var(--lime);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    h1, h2 {
+      font-family: "Orbitron", sans-serif;
+      font-size: 1.02rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .busca-form {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 520px) {
+      .busca-form {
+        grid-template-columns: 1.3fr 1fr auto;
+        align-items: end;
+      }
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .campo label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+    }
+
+    .campo input {
+      width: 100%;
+      padding: 10px 11px;
+      background: #050811;
+      border: 1px solid var(--border-tech);
+      color: #ffffff;
+      font-family: "Rajdhani", sans-serif;
+      font-size: 0.98rem;
+      font-weight: 600;
+    }
+
+    .btn-lime {
+      background: var(--lime);
+      color: var(--lime-dark);
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.74rem;
+      font-weight: 900;
+      padding: 11px 14px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .resumo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .resumo-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-tech);
+      padding: 9px 10px;
+    }
+
+    .resumo-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .resumo-val {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--lime);
+      margin-top: 2px;
+    }
+
+    .resumo-val.amber {
+      color: var(--amber);
+    }
+
+    .compras-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .compra-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-tech);
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .compra-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .compra-id {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--cyan-neon);
+    }
+
+    .tag-pix {
+      font-family: "Orbitron", sans-serif;
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .tag-pix.pago {
+      color: var(--lime);
+      border: 1px solid var(--lime);
+      background: rgba(184, 255, 0, 0.1);
+    }
+
+    .tag-pix.pendente {
+      color: var(--amber);
+      border: 1px solid var(--amber);
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    .compra-info {
+      font-size: 0.92rem;
+      color: #e2e8f0;
+      line-height: 1.35;
+    }
+
+    .compra-apuracao {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--lime);
+    }
+
+    .vazio {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body class="notranslate">
+  <div class="membros-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="badge-99">99</span>
+        <span class="brand-title">ÁREA DE MEMBROS</span>
+      </div>
+      <a href="/concursos-99.html">← Concursos</a>
+    </header>
+
+    <section class="sec">
+      <span class="sec-tag">// HISTÓRICO DE COMPRAS DO MEMBRO</span>
+      <h1>MEUS BILHETES &amp; NEGOCIAÇÕES</h1>
+
+      <form id="form-membro" class="busca-form">
+        <div class="campo">
+          <label for="membro-whatsapp">Seu WhatsApp</label>
+          <input
+            type="tel"
+            id="membro-whatsapp"
+            placeholder="Ex: 11960379764"
+          />
+        </div>
+
+        <div class="campo">
+          <label for="membro-id">Ou ID do Bilhete</label>
+          <input
+            type="text"
+            id="membro-id"
+            placeholder="Ex: 99S-C-12-4821"
+          />
+        </div>
+
+        <button type="submit" class="btn-lime">BUSCAR</button>
+      </form>
+    </section>
+
+    <section class="sec">
+      <span class="sec-tag">// RESUMO &amp; REGISTROS</span>
+      <h2>HISTÓRICO REGISTRADO</h2>
+
+      <div class="resumo-grid">
+        <div class="resumo-box">
+          <div class="resumo-label">Total Comprado</div>
+          <div class="resumo-val" id="res-total">R$ 0,00</div>
+        </div>
+        <div class="resumo-box">
+          <div class="resumo-label">Pix Pago</div>
+          <div class="resumo-val" id="res-pago">R$ 0,00</div>
+        </div>
+        <div class="resumo-box">
+          <div class="resumo-label">Pix Pendente</div>
+          <div class="resumo-val amber" id="res-pendente">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div id="lista-compras-membro" class="compras-lista">
+        <p class="vazio">Digite seu WhatsApp ou ID do bilhete acima para carregar seu histórico de compras.</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const formMembroEl = document.getElementById('form-membro');
+    const inputWhatsappEl = document.getElementById('membro-whatsapp');
+    const inputIdEl = document.getElementById('membro-id');
+    const listaComprasEl = document.getElementById('lista-compras-membro');
+    const resTotalEl = document.getElementById('res-total');
+    const resPagoEl = document.getElementById('res-pago');
+    const resPendenteEl = document.getElementById('res-pendente');
+
+    function moeda(v) {
+      return `R$ ${Number(v || 0).toFixed(2).replace('.', ',')}`;
+    }
+
+    function formatarDataHora(iso) {
+      if (!iso) return '--';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    async function carregarComprasMembro() {
+      const whatsapp = inputWhatsappEl ? inputWhatsappEl.value.trim() : '';
+      const idBilhete = inputIdEl ? inputIdEl.value.trim() : '';
+
+      if (!whatsapp && !idBilhete) {
+        listaComprasEl.innerHTML =
+          '<p class="vazio">Informe seu WhatsApp ou o ID do bilhete para consultar.</p>';
+        return;
+      }
+
+      if (whatsapp) {
+        localStorage.setItem('99_membro_whatsapp', whatsapp);
+      }
+
+      listaComprasEl.innerHTML = '<p class="vazio">Consultando histórico...</p>';
+
+      try {
+        const params = new URLSearchParams();
+        if (whatsapp) params.set('whatsapp', whatsapp);
+        if (idBilhete) params.set('id', idBilhete);
+
+        const res = await fetch(`/api/membros/compras?${params.toString()}`, { cache: 'no-store' });
+        const data = await res.json();
+
+        if (!res.ok) {
+          listaComprasEl.innerHTML = `<p class="vazio">${data.erro || 'Nenhum registro encontrado.'}</p>`;
+          return;
+        }
+
+        if (resTotalEl) resTotalEl.textContent = moeda(data.totalGasto);
+        if (resPagoEl) resPagoEl.textContent = moeda(data.totalPago);
+        if (resPendenteEl) resPendenteEl.textContent = moeda(data.totalPendente);
+
+        const compras = Array.isArray(data.compras) ? data.compras : [];
+        if (compras.length === 0) {
+          listaComprasEl.innerHTML =
+            '<p class="vazio">Nenhuma compra encontrada para esse WhatsApp ou ID.</p>';
+          return;
+        }
+
+        listaComprasEl.innerHTML = compras
+          .map(c => {
+            const pago = c.statusPagamento === 'pago';
+            return `
+              <article class="compra-card">
+                <div class="compra-topo">
+                  <span class="compra-id">${c.id} • Dezena ${c.dezena}</span>
+                  <span class="tag-pix ${pago ? 'pago' : 'pendente'}">
+                    PIX ${pago ? 'PAGO' : 'PENDENTE'}
+                  </span>
+                </div>
+                <div class="compra-info">
+                  <strong>Comprador:</strong> ${c.nome} • <strong>WhatsApp:</strong> ${c.whatsapp}<br />
+                  <strong>Concurso:</strong> #${c.concursoNumero} (${c.horarioConcurso}) • <strong>Data/Hora:</strong> ${formatarDataHora(c.dataHora)}<br />
+                  <strong>Valor:</strong> ${moeda(c.valor)} • <strong>Prêmio:</strong> ${moeda(c.retornoPotencial)}
+                </div>
+                <div class="compra-apuracao">${c.situacaoSorteio}</div>
+              </article>
+            `;
+          })
+          .join('');
+      } catch (_) {
+        listaComprasEl.innerHTML =
+          '<p class="vazio">Erro de comunicação ao carregar seu histórico.</p>';
+      }
+    }
+
+    if (formMembroEl) {
+      formMembroEl.addEventListener('submit', e => {
+        e.preventDefault();
+        carregarComprasMembro();
+      });
+    }
+
+    const salvoWpp = localStorage.getItem('99_membro_whatsapp');
+    if (salvoWpp && inputWhatsappEl) {
+      inputWhatsappEl.value = salvoWpp;
+      carregarComprasMembro();
+    }
+  </script>
+</body>
+</html>
