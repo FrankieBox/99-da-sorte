@@ -325,6 +325,23 @@ function normalizarDezenaSorteio(entrada) {
   return DEZENAS_VALIDAS.has(pad) ? pad : null;
 }
 
+function normalizarStatusPagamento(valor, fallback = 'pendente') {
+  const limpo = String(valor || '').trim().toLowerCase();
+  if (limpo === 'pago' || limpo === 'confirmado' || limpo === 'paid') return 'pago';
+  if (limpo === 'pendente' || limpo === 'pendente_pix_provisorio' || limpo === 'pending') return 'pendente';
+  return fallback;
+}
+
+function normalizarLeadEntrada(lead, nome, telefone, whatsapp) {
+  const nomeLimpo = String((lead && lead.nome) || nome || '').trim();
+  const contatoLimpo = String((lead && lead.contato) || whatsapp || telefone || '').trim();
+  if (!nomeLimpo && !contatoLimpo) return null;
+  return {
+    nome: nomeLimpo || 'Cliente 99',
+    contato: contatoLimpo || 'Não informado'
+  };
+}
+
 function prepararRegistroVenda({
   modalidade,
   selecao,
@@ -336,6 +353,10 @@ function prepararRegistroVenda({
   horarioConcurso,
   dataCiclo,
   lead,
+  nome,
+  telefone,
+  whatsapp,
+  statusPagamento,
   orderNsu
 }) {
   const modLimpa = String(modalidade || 'DZ').trim().toUpperCase();
@@ -377,6 +398,8 @@ function prepararRegistroVenda({
   const idGerado = concurso && cfg.codigo === 'DZ'
     ? gerarIdBilheteConcurso(concurso)
     : `VND-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const leadNormalizado = normalizarLeadEntrada(lead, nome, telefone, whatsapp);
+  const statusPix = normalizarStatusPagamento(statusPagamento, orderNsu ? 'pago' : 'pendente');
 
   return {
     venda: {
@@ -388,7 +411,7 @@ function prepararRegistroVenda({
       horarioConcurso: concurso ? concurso.horario : (horarioConcurso || null),
       origem: origemLimpa,
       produto: produto || (concurso ? `Concurso #${concurso.numero} • ${concurso.horario}` : null),
-      lead: lead || null,
+      lead: leadNormalizado,
       orderNsu: orderNsu || null,
       modalidade: cfg.codigo,
       nomeModalidade: cfg.nome,
@@ -397,6 +420,7 @@ function prepararRegistroVenda({
       chaveNormalizada,
       valor: valorFormatado,
       retornoPotencial,
+      statusPagamento: statusPix,
       pixCopiaCola: PIX_PROVISORIO_COPIA_COLA
     }
   };
@@ -466,6 +490,7 @@ function efetivarPedidoPago(orderNsu, detalhePagamento = null) {
     horarioConcurso: pedido.horarioConcurso,
     dataCiclo: pedido.dataCiclo,
     lead: pedido.lead,
+    statusPagamento: 'pago',
     orderNsu: pedido.order_nsu
   });
 
@@ -621,7 +646,7 @@ function lidarComReservaBilhete(req, res) {
       retornoPotencial: Number(concurso.premio) || 50.0,
       grupo,
       origem: body.origem === 'presencial' ? 'presencial' : 'landing',
-      statusPagamento: 'pendente_pix_provisorio',
+      statusPagamento: 'pendente',
       pixCopiaCola: PIX_PROVISORIO_COPIA_COLA,
       lead: { nome, contato }
     };
@@ -657,18 +682,76 @@ app.get('/api/catalogo', (req, res) => {
 
 app.get('/api/vendas', (req, res) => {
   try {
-    const vendas = lerJSON(VENDAS_PATH);
+    const { concurso, data, whatsapp, status } = req.query;
+    const vendasRaw = lerJSON(VENDAS_PATH);
     const pedidos = lerJSON(PEDIDOS_PATH);
-    const pendentes = pedidos.filter(p => p.status !== 'pago').length;
-    const totalArrecadado = vendas.reduce((acc, v) => acc + Number(v.valor || 0), 0);
-    const retornoPotencialTotal = vendas.reduce((acc, v) => acc + Number(v.retornoPotencial || 0), 0);
+
+    const vendasNormalizadas = vendasRaw.map(v => ({
+      ...v,
+      statusPagamento: normalizarStatusPagamento(v.statusPagamento, 'pendente')
+    }));
+
+    let filtradas = vendasNormalizadas;
+
+    if (concurso && String(concurso).trim() !== 'TODOS') {
+      const cFiltro = String(concurso).trim().toUpperCase();
+      const digFiltro = cFiltro.replace(/\D/g, '').padStart(2, '0');
+      filtradas = filtradas.filter(v => {
+        const idMatch = String(v.concursoId || '').toUpperCase() === cFiltro;
+        const numMatch = digFiltro && String(v.concursoNumero || '').padStart(2, '0') === digFiltro;
+        const horaMatch = String(v.horarioConcurso || '') === String(concurso).trim();
+        return idMatch || numMatch || horaMatch;
+      });
+    }
+
+    if (data && String(data).trim() !== '') {
+      const dFiltro = String(data).trim();
+      filtradas = filtradas.filter(v => {
+        const ciclo = String(v.dataCiclo || '');
+        const isoDia = String(v.dataHora || '').slice(0, 10);
+        return ciclo === dFiltro || isoDia === dFiltro;
+      });
+    }
+
+    if (whatsapp && String(whatsapp).trim() !== '') {
+      const wLimpo = String(whatsapp).replace(/\D/g, '');
+      const textoBusca = String(whatsapp).trim().toLowerCase();
+      filtradas = filtradas.filter(v => {
+        const contato = String((v.lead && v.lead.contato) || '');
+        const nome = String((v.lead && v.lead.nome) || '').toLowerCase();
+        const idBilhete = String(v.id || '').toLowerCase();
+        const digContato = contato.replace(/\D/g, '');
+        const bateFone = wLimpo.length > 0 && digContato.includes(wLimpo);
+        return bateFone || nome.includes(textoBusca) || idBilhete.includes(textoBusca);
+      });
+    }
+
+    if (status && String(status).trim().toLowerCase() !== 'todos') {
+      const sFiltro = normalizarStatusPagamento(status, '');
+      if (sFiltro) {
+        filtradas = filtradas.filter(v => v.statusPagamento === sFiltro);
+      }
+    }
+
+    const totalArrecadado = filtradas.reduce((acc, v) => acc + Number(v.valor || 0), 0);
+    const totalPago = filtradas
+      .filter(v => v.statusPagamento === 'pago')
+      .reduce((acc, v) => acc + Number(v.valor || 0), 0);
+    const totalPendente = filtradas
+      .filter(v => v.statusPagamento !== 'pago')
+      .reduce((acc, v) => acc + Number(v.valor || 0), 0);
+    const retornoPotencialTotal = filtradas.reduce((acc, v) => acc + Number(v.retornoPotencial || 0), 0);
+    const pendentesPedidos = pedidos.filter(p => p.status !== 'pago').length;
 
     res.json({
-      totalRegistros: vendas.length,
-      pedidosPendentes: pendentes,
+      totalRegistros: filtradas.length,
+      totalGeralBase: vendasNormalizadas.length,
+      pedidosPendentes: pendentesPedidos,
       totalArrecadado: Number(totalArrecadado.toFixed(2)),
+      totalPago: Number(totalPago.toFixed(2)),
+      totalPendente: Number(totalPendente.toFixed(2)),
       retornoPotencialTotal: Number(retornoPotencialTotal.toFixed(2)),
-      vendas
+      vendas: filtradas
     });
   } catch (err) {
     res.status(500).json({ erro: 'Falha ao ler vendas.json' });
@@ -688,6 +771,33 @@ app.post('/api/vendas', (req, res) => {
   res.status(201).json(preparado.venda);
 });
 
+app.patch('/api/vendas/:id/status', (req, res) => {
+  const chaveEnviada = String(
+    req.headers['x-admin-key'] || (req.body && req.body.chaveAdmin) || ''
+  ).trim();
+  if (chaveEnviada !== ADMIN_CHAVE) {
+    return res.status(401).json({ erro: 'Acesso não autorizado.' });
+  }
+
+  const { id } = req.params;
+  const vendas = lerJSON(VENDAS_PATH);
+  const idx = vendas.findIndex(v => String(v.id) === String(id));
+  if (idx === -1) {
+    return res.status(404).json({ erro: 'Bilhete não encontrado.' });
+  }
+
+  const atual = normalizarStatusPagamento(vendas[idx].statusPagamento, 'pendente');
+  const novoStatus = req.body && req.body.statusPagamento
+    ? normalizarStatusPagamento(req.body.statusPagamento, atual === 'pago' ? 'pendente' : 'pago')
+    : (atual === 'pago' ? 'pendente' : 'pago');
+
+  vendas[idx].statusPagamento = novoStatus;
+  vendas[idx].confirmadoEm = novoStatus === 'pago' ? new Date().toISOString() : null;
+  salvarJSON(VENDAS_PATH, vendas);
+
+  res.json({ ok: true, venda: vendas[idx] });
+});
+
 app.delete('/api/vendas/:id', (req, res) => {
   const { id } = req.params;
   const vendas = lerJSON(VENDAS_PATH);
@@ -699,6 +809,96 @@ app.delete('/api/vendas/:id', (req, res) => {
 
   salvarJSON(VENDAS_PATH, filtradas);
   res.json({ sucesso: true });
+});
+
+// Área de membros: histórico de compras por WhatsApp ou ID de bilhete
+app.get('/api/membros/compras', (req, res) => {
+  try {
+    const whatsappQuery = String(req.query.whatsapp || '').replace(/\D/g, '');
+    const idQuery = String(req.query.id || '').trim().toLowerCase();
+
+    if (!whatsappQuery && !idQuery) {
+      return res.status(400).json({ erro: 'Informe o WhatsApp ou o ID do bilhete para consultar seu histórico.' });
+    }
+
+    const vendas = lerJSON(VENDAS_PATH);
+    const resultados = lerJSON(RESULTADOS_PATH);
+    const catalogo = obterCatalogoConcursos();
+
+    const compras = vendas
+      .filter(v => {
+        const contatoDigitos = String((v.lead && v.lead.contato) || '').replace(/\D/g, '');
+        const bateWhatsapp = whatsappQuery.length >= 6 && contatoDigitos.includes(whatsappQuery);
+        const bateId = idQuery.length > 0 && String(v.id || '').toLowerCase() === idQuery;
+        return bateWhatsapp || bateId;
+      })
+      .map(v => {
+        const concursoInfo = catalogo.find(c =>
+          (v.concursoId && c.id === v.concursoId) ||
+          (v.horarioConcurso && c.horario === v.horarioConcurso)
+        ) || {
+          id: v.concursoId || 'C-00',
+          numero: v.concursoNumero || '--',
+          horario: v.horarioConcurso || '--:--',
+          premio: v.retornoPotencial || 50.0
+        };
+
+        const dataCicloBilhete = v.dataCiclo || String(v.dataHora || '').slice(0, 10);
+        const resultadoOficial = resultados.find(r =>
+          r.dataCiclo === dataCicloBilhete &&
+          r.horario === (v.horarioConcurso || concursoInfo.horario)
+        );
+
+        const dezenaBilhete = Array.isArray(v.selecao)
+          ? v.selecao.join('-')
+          : String(v.selecao || '').padStart(2, '0');
+
+        const statusPix = normalizarStatusPagamento(v.statusPagamento, 'pendente');
+        let situacaoSorteio = `Aguardando apuração (${concursoInfo.horario})`;
+        let premiado = false;
+
+        if (resultadoOficial) {
+          premiado = v.modalidade === 'DZ' && dezenaBilhete === resultadoOficial.dezena;
+          situacaoSorteio = premiado
+            ? `PREMIADO! Dezena ${resultadoOficial.dezena} sorteada`
+            : `Não premiado (Sorteada: ${resultadoOficial.dezena} • Grupo ${resultadoOficial.grupo})`;
+        }
+
+        return {
+          id: v.id,
+          dataHora: v.dataHora,
+          dataCiclo: dataCicloBilhete,
+          concursoNumero: concursoInfo.numero,
+          horarioConcurso: concursoInfo.horario,
+          dezena: dezenaBilhete,
+          valor: Number(v.valor || 2.5),
+          retornoPotencial: Number(v.retornoPotencial || 50.0),
+          statusPagamento: statusPix,
+          premiado,
+          situacaoSorteio,
+          nome: (v.lead && v.lead.nome) || 'Membro 99',
+          whatsapp: (v.lead && v.lead.contato) || ''
+        };
+      });
+
+    const totalGasto = compras.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+    const totalPago = compras
+      .filter(item => item.statusPagamento === 'pago')
+      .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+    const totalPendente = compras
+      .filter(item => item.statusPagamento !== 'pago')
+      .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+
+    res.json({
+      totalCompras: compras.length,
+      totalGasto: Number(totalGasto.toFixed(2)),
+      totalPago: Number(totalPago.toFixed(2)),
+      totalPendente: Number(totalPendente.toFixed(2)),
+      compras
+    });
+  } catch (err) {
+    res.status(500).json({ erro: 'Falha ao buscar histórico de compras do membro.' });
+  }
 });
 
 app.get('/api/resultados', (req, res) => {
@@ -830,6 +1030,7 @@ app.get('/api/bilhete/:id', (req, res) => {
     res.json({
       id: venda.id,
       dataCiclo: dataCicloBilhete,
+      statusPagamento: normalizarStatusPagamento(venda.statusPagamento, 'pendente'),
       concurso: {
         id: concursoInfo.id,
         numero: concursoInfo.numero,
@@ -915,7 +1116,8 @@ app.post('/api/checkout/criar', async (req, res) => {
     concursoNumero: body.concursoNumero,
     horarioConcurso: body.horarioConcurso,
     dataCiclo: body.dataCiclo,
-    lead: { nome: nomeLead, contato: contatoLead }
+    lead: { nome: nomeLead, contato: contatoLead },
+    statusPagamento: 'pendente'
   });
 
   if (preparado.erro) {
