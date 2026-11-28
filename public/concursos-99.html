@@ -53,7 +53,7 @@
           <p class="hero-subtitle">
             Escolha um concurso no carrossel abaixo, marque sua dezena e concorra por apenas <strong>R$ 2,50</strong>.
           </p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <div class="hero-cta-row">
             <a href="#secao-concursos" class="btn-cyber-primary">
               <span>ESCOLHER CONCURSO</span>
               <span class="btn-arrow">➔</span>
@@ -108,22 +108,21 @@
       </div>
 
       <div class="rules-panel">
-        <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 4px;">
+        <p class="consulta-desc">
           Digite o código/ID do seu bilhete para conferir o dia, o horário do concurso e o resultado oficial.
         </p>
-        <form id="form-consulta-id" style="display: flex; gap: 8px;">
+        <form id="form-consulta-id" class="consulta-form">
           <input
             type="text"
             id="input-consulta-id"
             placeholder="Ex: 99S-C-01-1234"
             required
-            style="flex: 1; padding: 10px 12px; background: #050811; border: 1px solid rgba(56, 189, 248, 0.35); color: #fff; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem;"
           />
           <button type="submit" id="btn-consulta-id" class="btn-cyber-mini">BUSCAR</button>
         </form>
-        <div id="resultado-consulta-id" class="modal-feedback" style="color: #38bdf8;"></div>
+        <div id="resultado-consulta-id" class="modal-feedback consulta-resultado"></div>
         <div>
-          <a href="/membros.html" style="color: #b8ff00; font-weight: 700; font-size: 0.88rem; text-decoration: none;">
+          <a href="/membros.html" class="link-membros-inline">
             ➔ Abrir Área de Membros (histórico completo por WhatsApp)
           </a>
         </div>
@@ -181,7 +180,7 @@
         <p>Compartilhe com seus amigos e, para quem já conhece, divulgue o QR Code ao lado.</p>
         <div class="footer-links">
           <span>● Grade 08:10 às 21:10</span>
-          <a href="/membros.html" style="color: #b8ff00; text-decoration: none; font-weight: 700;">● Área de Membros</a>
+          <a href="/membros.html" class="footer-membros-link">● Área de Membros</a>
         </div>
       </div>
 
@@ -196,6 +195,7 @@
     </div>
   </div>
 
+  <!-- MODAL DE RESERVA DO BILHETE -->
   <div id="modal-concurso" class="cyber-modal oculto" role="dialog" aria-modal="true">
     <div class="cyber-modal-card">
       <div class="modal-top">
@@ -240,6 +240,57 @@
       </form>
 
       <p id="modal-feedback" class="modal-feedback"></p>
+    </div>
+  </div>
+
+  <!-- TELINHA DE CHECKOUT / PAGAMENTO PROVISÓRIO VIA QR CODE -->
+  <div id="modal-checkout" class="cyber-modal oculto" role="dialog" aria-modal="true">
+    <div class="cyber-modal-card checkout-card">
+      <div class="modal-top">
+        <div>
+          <span class="modal-tag">// CHECKOUT PROVISÓRIO • QR CODE</span>
+          <h3>PAGAMENTO DO BILHETE</h3>
+        </div>
+        <button type="button" id="btn-fechar-checkout" class="btn-modal-close">✕</button>
+      </div>
+
+      <div class="checkout-resumo">
+        <div class="checkout-linha">
+          <span>ID do Bilhete:</span>
+          <strong id="chk-bilhete-id">--</strong>
+        </div>
+        <div class="checkout-linha">
+          <span>Concurso / Dezena:</span>
+          <strong id="chk-concurso-dz">--</strong>
+        </div>
+        <div class="checkout-linha">
+          <span>Valor a pagar:</span>
+          <strong class="destaque-lime">R$ 2,50</strong>
+        </div>
+        <div class="checkout-linha">
+          <span>Status atual:</span>
+          <strong id="chk-status-pagamento" class="status-pendente">PENDENTE</strong>
+        </div>
+      </div>
+
+      <div class="checkout-qr-area">
+        <img id="chk-qr-img" src="" alt="QR Code provisório para pagamento de R$ 2,50" />
+        <p class="checkout-instrucao">
+          Escaneie o QR Code provisório acima com seu app bancário para pagar <strong>R$ 2,50</strong> enquanto o checkout oficial do banco está em pausa. Após o pagamento, a confirmação fica como <strong>PAGO</strong> no painel ADM.
+        </p>
+      </div>
+
+      <div class="checkout-acoes">
+        <button type="button" id="btn-chk-copiar-id" class="btn-cyber-mini full-mini">
+          📋 COPIAR ID DO BILHETE
+        </button>
+        <a href="/membros.html" class="btn-cyber-primary full">
+          <span>IR PARA ÁREA DE MEMBROS</span>
+          <span class="btn-arrow">➔</span>
+        </a>
+      </div>
+
+      <p id="chk-feedback" class="modal-feedback"></p>
     </div>
   </div>
 
