@@ -52,6 +52,15 @@ const modalNomeEl = document.getElementById('modal-nome');
 const modalWhatsappEl = document.getElementById('modal-whatsapp');
 const modalFeedbackEl = document.getElementById('modal-feedback');
 
+const modalCheckoutEl = document.getElementById('modal-checkout');
+const btnFecharCheckoutEl = document.getElementById('btn-fechar-checkout');
+const chkBilheteIdEl = document.getElementById('chk-bilhete-id');
+const chkConcursoDzEl = document.getElementById('chk-concurso-dz');
+const chkStatusPagamentoEl = document.getElementById('chk-status-pagamento');
+const chkQrImgEl = document.getElementById('chk-qr-img');
+const btnChkCopiarIdEl = document.getElementById('btn-chk-copiar-id');
+const chkFeedbackEl = document.getElementById('chk-feedback');
+
 const CARD_LARGURA_PASSO = 178;
 let concursos = HORARIOS_CONCURSOS.map((horario, idx) => ({
   id: `C-${String(idx + 1).padStart(2, '0')}`,
@@ -67,6 +76,7 @@ let concursoAtivo = null;
 let dezenaSelecionada = '';
 let indiceFocoCarousel = 0;
 let posicaoInicialAjustada = false;
+let ultimoBilheteReservado = null;
 
 let configAgentes = { ...AGENTES_PADRAO };
 let timerAgenteId = null;
@@ -267,9 +277,7 @@ async function carregarConcursosAtivosServidor() {
       construirCarrossel();
       atualizarCronometros();
     }
-  } catch (_) {
-    // Mantém lista local em modo offline/preview
-  }
+  } catch (_) {}
 }
 
 async function carregarUltimosResultados() {
@@ -434,6 +442,67 @@ function fecharModalConcurso() {
   }
 }
 
+function abrirCheckoutProvisorio(bilhete) {
+  ultimoBilheteReservado = bilhete;
+  if (chkBilheteIdEl) chkBilheteIdEl.textContent = bilhete.id || '--';
+  if (chkConcursoDzEl) {
+    chkConcursoDzEl.textContent = `#${bilhete.concursoNumero || '--'} (${bilhete.horarioConcurso || '--'}) • DZ ${bilhete.selecao || '--'}`;
+  }
+  if (chkStatusPagamentoEl) {
+    chkStatusPagamentoEl.textContent = String(bilhete.statusPagamento || 'pendente').toUpperCase();
+  }
+  if (chkFeedbackEl) {
+    chkFeedbackEl.textContent = '';
+    chkFeedbackEl.className = 'modal-feedback';
+  }
+  if (chkQrImgEl) {
+    const payloadQr = encodeURIComponent(
+      `99 DA SORTE | BILHETE ${bilhete.id} | DZ ${bilhete.selecao} | R$ 2,50`
+    );
+    chkQrImgEl.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${payloadQr}`;
+  }
+
+  fecharModalConcurso();
+  if (modalCheckoutEl) {
+    modalCheckoutEl.classList.remove('oculto');
+  }
+}
+
+function fecharCheckoutProvisorio() {
+  if (modalCheckoutEl) {
+    modalCheckoutEl.classList.add('oculto');
+  }
+}
+
+if (btnFecharCheckoutEl) {
+  btnFecharCheckoutEl.addEventListener('click', fecharCheckoutProvisorio);
+}
+
+if (modalCheckoutEl) {
+  modalCheckoutEl.addEventListener('click', e => {
+    if (e.target === modalCheckoutEl) fecharCheckoutProvisorio();
+  });
+}
+
+if (btnChkCopiarIdEl) {
+  btnChkCopiarIdEl.addEventListener('click', async () => {
+    const idTexto = ultimoBilheteReservado && ultimoBilheteReservado.id ? ultimoBilheteReservado.id : '';
+    if (!idTexto) return;
+    try {
+      await navigator.clipboard.writeText(idTexto);
+      if (chkFeedbackEl) {
+        chkFeedbackEl.className = 'modal-feedback';
+        chkFeedbackEl.textContent = `ID ${idTexto} copiado!`;
+      }
+    } catch (_) {
+      if (chkFeedbackEl) {
+        chkFeedbackEl.className = 'modal-feedback';
+        chkFeedbackEl.textContent = `ID do bilhete: ${idTexto}`;
+      }
+    }
+  });
+}
+
 if (btnFecharModalEl) {
   btnFecharModalEl.addEventListener('click', fecharModalConcurso);
 }
@@ -473,7 +542,7 @@ if (formConcursoIndividualEl) {
 
     if (modalFeedbackEl) {
       modalFeedbackEl.className = 'modal-feedback';
-      modalFeedbackEl.textContent = 'Registrando reserva do bilhete...';
+      modalFeedbackEl.textContent = 'Gerando bilhete e abrindo checkout...';
     }
 
     try {
@@ -502,14 +571,7 @@ if (formConcursoIndividualEl) {
       }
 
       localStorage.setItem('99_membro_whatsapp', whatsapp);
-
-      if (modalFeedbackEl) {
-        modalFeedbackEl.className = 'modal-feedback';
-        modalFeedbackEl.innerHTML = `
-          Bilhete reservado! ID: <strong>${data.bilhete.id}</strong> • Dezena <strong>${data.bilhete.selecao}</strong> • Status Pix: <strong>PENDENTE</strong>.<br />
-          <a href="/membros.html" style="color:#b8ff00;text-decoration:underline;">Ver na Área de Membros</a>
-        `;
-      }
+      abrirCheckoutProvisorio(data.bilhete);
     } catch (_) {
       if (modalFeedbackEl) {
         modalFeedbackEl.className = 'modal-feedback erro';
@@ -607,3 +669,4 @@ carregarConfigAgentes();
 
 setInterval(atualizarCronometros, 1000);
 setInterval(carregarUltimosResultados, 20000);
+a
