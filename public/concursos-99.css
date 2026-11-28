@@ -21,6 +21,7 @@ html,
 body {
   width: 100%;
   max-width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
   scroll-behavior: smooth;
   background-color: var(--bg-void);
@@ -30,13 +31,17 @@ body {
   background: var(--bg-void);
   color: var(--text-main);
   font-family: "Rajdhani", system-ui, -apple-system, sans-serif;
-  min-height: 100vh;
+  display: block;
+  margin: 0;
+  padding: 0;
 }
 
 .cyber-shell {
   width: 100%;
   max-width: 100%;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
   background: var(--bg-void);
   border: none;
   box-shadow: none;
@@ -91,16 +96,22 @@ body {
 }
 
 .link-membros-pill {
-  color: var(--lime);
+  color: var(--cyan-neon);
   text-decoration: none;
   font-family: "Orbitron", sans-serif;
   font-size: 0.62rem;
-  font-weight: 800;
-  border: 1px solid rgba(184, 255, 0, 0.45);
-  background: rgba(184, 255, 0, 0.08);
-  padding: 4px 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--border-tech);
+  background: rgba(56, 189, 248, 0.1);
+  padding: 4px 9px;
   border-radius: 999px;
   white-space: nowrap;
+}
+
+.link-membros-pill:hover {
+  border-color: var(--lime);
+  color: var(--lime);
 }
 
 .cyber-live-pill {
@@ -131,6 +142,7 @@ body {
 .cyber-hero {
   border-bottom: 1px solid var(--border-tech);
   background: var(--bg-void);
+  width: 100%;
 }
 
 .hero-media-frame {
@@ -265,6 +277,7 @@ body {
   padding: 16px 14px;
   border-bottom: 1px solid var(--border-tech);
   background: var(--bg-void);
+  width: 100%;
 }
 
 .section-head {
@@ -343,6 +356,7 @@ body {
 }
 
 .carousel-viewport {
+  width: 100%;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -513,6 +527,7 @@ body {
 
 .consulta-form input {
   flex: 1;
+  min-width: 0;
   padding: 10px 12px;
   background: #050811;
   border: 1px solid rgba(56, 189, 248, 0.35);
@@ -564,6 +579,7 @@ body {
   padding: 14px;
   border-bottom: 1px solid var(--border-tech);
   background: var(--bg-void);
+  width: 100%;
 }
 
 .metric-card {
@@ -602,6 +618,7 @@ body {
   gap: 12px;
   padding: 16px 14px;
   background: var(--bg-void);
+  width: 100%;
 }
 
 .footer-info h3 {
@@ -663,6 +680,7 @@ body {
   text-align: center;
   padding: 6px 8px;
   letter-spacing: 0.6px;
+  width: 100%;
 }
 
 .cyber-modal {
@@ -717,6 +735,7 @@ body {
   width: 30px;
   height: 30px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .modal-timer-bar,
@@ -909,7 +928,7 @@ body {
   color: #f87171;
 }
 
-/* TELINHA DE CHECKOUT PROVISÓRIO */
+/* TELINHA DE CHECKOUT PROVISÓRIO (QR CODE + PIX COPIA E COLA) */
 .checkout-resumo {
   background: #050811;
   border: 1px solid var(--border-tech);
@@ -934,7 +953,7 @@ body {
 
 .checkout-linha strong {
   font-family: "Orbitron", sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #ffffff;
 }
 
@@ -966,10 +985,38 @@ body {
   border: 2px solid var(--lime);
 }
 
-.checkout-instrucao {
-  font-size: 0.83rem;
-  line-height: 1.38;
+.checkout-pix-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.checkout-pix-box label {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.62rem;
+  color: var(--cyan-neon);
+  letter-spacing: 0.6px;
+}
+
+.checkout-pix-codigo {
+  width: 100%;
+  min-height: 62px;
+  padding: 8px 10px;
+  background: #050811;
+  border: 1px solid var(--border-tech);
   color: #e2e8f0;
+  font-family: monospace;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  resize: none;
+}
+
+.checkout-instrucao {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #cbd5e1;
 }
 
 .checkout-acoes {
